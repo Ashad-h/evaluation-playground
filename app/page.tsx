@@ -550,6 +550,7 @@ export default function OpenAIPlayground() {
                                 <TableHead>F1 Score</TableHead>
                                 <TableHead>Model</TableHead>
                                 <TableHead>Cost</TableHead>
+                                <TableHead>Average Cost per 100 examples</TableHead>
                                 <TableHead>Prompt</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -614,6 +615,14 @@ export default function OpenAIPlayground() {
                                             </TableCell>
                                             <TableCell>
                                                 ${metrics.cost.toFixed(4)}
+                                            </TableCell>
+                                            <TableCell>
+                                                $
+                                                {(
+                                                    (metrics.cost /
+                                                        dataset.length) *
+                                                    100
+                                                ).toFixed(4)}
                                             </TableCell>
                                             <TableCell>
                                                 <Collapsible>
