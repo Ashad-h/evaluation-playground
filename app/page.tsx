@@ -41,6 +41,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+import { LinkedInPost } from "@/components/LinkedInPost";
+
 // Define a more flexible output schema
 const outputSchema = z.object({
     output: z.union([z.boolean(), z.string(), z.number()]),
@@ -606,13 +608,15 @@ export default function OpenAIPlayground() {
                                     <TableRow>
                                         <TableCell colSpan={4}>
                                             <div className="p-4 bg-gray-50 space-y-4">
-                                                <div>
+                                                <div className="w-fit">
                                                     <h3 className="font-semibold mb-2">
                                                         Input:
                                                     </h3>
-                                                    <pre className="whitespace-pre-wrap break-words bg-gray-100 p-2 rounded">
-                                                        {item.input}
-                                                    </pre>
+                                                    <LinkedInPost
+                                                        editable={true}
+                                                        content={item.input}
+                                                        previewWidth="w-[350px]"
+                                                    />
                                                 </div>
                                                 <div>
                                                     <h3 className="font-semibold mb-2">
