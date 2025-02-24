@@ -43,9 +43,10 @@ import {
 
 import { LinkedInPost } from "@/components/LinkedInPost";
 
-// Define a more flexible output schema
+// Update the output schema to include optional explanation
 const outputSchema = z.object({
     output: z.union([z.boolean(), z.string(), z.number()]),
+    explanation: z.string().optional(),
 });
 
 type OutputType = z.infer<typeof outputSchema>["output"];
@@ -54,6 +55,7 @@ interface DatasetItem {
     input: string;
     expectedOutput: OutputType;
     predictedOutput?: OutputType;
+    explanation?: string; // Add explanation field
 }
 
 interface Metrics {
@@ -61,6 +63,7 @@ interface Metrics {
     recall: number;
     f1Score: number;
     prompt: string;
+    model: string;
 }
 
 // Define a schema for dataset items
@@ -150,10 +153,14 @@ export default function OpenAIPlayground() {
                     model: openai(formState.selectedModel),
                     schema: outputSchema,
                     prompt: `${formState.prompt}\n\nInput: ${item.input}`,
-                    system: "You are a helpful AI that responds with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number) based on the input question or statement.",
+                    system: "You are a helpful AI that responds with a JSON object containing an 'output' key with the appropriate value (boolean, string, or number) and an optional 'explanation' key with a string explaining your reasoning.",
                 });
 
-                updatedDataset[i] = { ...item, predictedOutput: object.output };
+                updatedDataset[i] = {
+                    ...item,
+                    predictedOutput: object.output,
+                    explanation: object.explanation,
+                };
 
                 return {
                     predicted: object.output,
@@ -227,6 +234,7 @@ export default function OpenAIPlayground() {
             recall,
             f1Score,
             prompt: formState.prompt,
+            model: formState.selectedModel,
         };
 
         setMetricsHistory((prevHistory) => [...prevHistory, newMetrics]);
@@ -295,8 +303,9 @@ export default function OpenAIPlayground() {
                 recall: Math.max(best.recall, current.recall),
                 f1Score: Math.max(best.f1Score, current.f1Score),
                 prompt: best.prompt,
+                model: best.model,
             }),
-            { precision: 0, recall: 0, f1Score: 0, prompt: "" }
+            { precision: 0, recall: 0, f1Score: 0, prompt: "", model: "" }
         );
     };
 
@@ -344,6 +353,10 @@ export default function OpenAIPlayground() {
                                 GPT-4o-mini
                             </SelectItem>
                             <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                            <SelectItem value="o3-mini">o3-mini</SelectItem>
+                            <SelectItem value="o3-mini-high">
+                                o3-mini-high
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -379,6 +392,7 @@ export default function OpenAIPlayground() {
                                 <TableHead>Precision</TableHead>
                                 <TableHead>Recall</TableHead>
                                 <TableHead>F1 Score</TableHead>
+                                <TableHead>Model</TableHead>
                                 <TableHead>Prompt</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -437,6 +451,9 @@ export default function OpenAIPlayground() {
                                                     ).toFixed(1)}
                                                     %
                                                 </span>
+                                            </TableCell>
+                                            <TableCell>
+                                                {metrics.model}
                                             </TableCell>
                                             <TableCell>
                                                 <Collapsible>
@@ -553,7 +570,7 @@ export default function OpenAIPlayground() {
 
             <div>
                 <h2 className="text-xl font-semibold mb-2">Dataset</h2>
-                <Table>
+                <Table className="max-w-2xl">
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[50px]"></TableHead>
@@ -565,21 +582,16 @@ export default function OpenAIPlayground() {
                     <TableBody>
                         {dataset.map((item, index) => (
                             <React.Fragment key={index}>
-                                <TableRow>
+                                <TableRow
+                                    className="cursor-pointer hover:bg-gray-50"
+                                    onClick={() => toggleRowExpansion(index)}
+                                >
                                     <TableCell>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                                toggleRowExpansion(index)
-                                            }
-                                        >
-                                            {expandedRows[index] ? (
-                                                <ChevronDown className="h-4 w-4" />
-                                            ) : (
-                                                <ChevronRight className="h-4 w-4" />
-                                            )}
-                                        </Button>
+                                        {expandedRows[index] ? (
+                                            <ChevronDown className="h-4 w-4" />
+                                        ) : (
+                                            <ChevronRight className="h-4 w-4" />
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         {item.input.length > 50
@@ -608,15 +620,29 @@ export default function OpenAIPlayground() {
                                     <TableRow>
                                         <TableCell colSpan={4}>
                                             <div className="p-4 bg-gray-50 space-y-4">
-                                                <div className="w-fit">
-                                                    <h3 className="font-semibold mb-2">
-                                                        Input:
-                                                    </h3>
-                                                    <LinkedInPost
-                                                        editable={true}
-                                                        content={item.input}
-                                                        previewWidth="w-[350px]"
-                                                    />
+                                                <div className="flex gap-4">
+                                                    <div className="w-fit">
+                                                        <h3 className="font-semibold mb-2">
+                                                            Input:
+                                                        </h3>
+                                                        <LinkedInPost
+                                                            editable={true}
+                                                            content={item.input}
+                                                            previewWidth="w-[350px]"
+                                                        />
+                                                    </div>
+                                                    {item.explanation && (
+                                                        <div className="max-w-md">
+                                                            <h3 className="font-semibold mb-2">
+                                                                Explanation:
+                                                            </h3>
+                                                            <p className="text-gray-700 bg-white p-3 rounded-md">
+                                                                {
+                                                                    item.explanation
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-semibold mb-2">
