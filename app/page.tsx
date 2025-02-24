@@ -40,13 +40,14 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Progress } from "@/components/ui/progress";
 
 import { LinkedInPost } from "@/components/LinkedInPost";
 
 // Update the output schema to include optional explanation
 const outputSchema = z.object({
     output: z.union([z.boolean(), z.string(), z.number()]),
-    explanation: z.string().optional(),
+    explanation: z.string(),
 });
 
 type OutputType = z.infer<typeof outputSchema>["output"];
@@ -83,14 +84,37 @@ const initialDataset: DatasetItem[] = [
 
 interface FormState {
     openaiKey: string;
-    selectedModel: string;
+    selectedModel: keyof typeof MODELS;
     prompt: string;
 }
+
+const MODELS = {
+    "gpt-4o-mini": {
+        value: "gpt-4o-mini",
+        name: "GPT-4o-mini",
+        reasoningEffort: null,
+    },
+    "gpt-4o": {
+        value: "gpt-4o",
+        name: "GPT-4o",
+        reasoningEffort: null,
+    },
+    "o3-mini": {
+        value: "o3-mini",
+        name: "o3-mini",
+        reasoningEffort: "medium",
+    },
+    "o3-mini-high": {
+        value: "o3-mini",
+        name: "o3-mini-high",
+        reasoningEffort: "high",
+    },
+};
 
 export default function OpenAIPlayground() {
     const [formState, setFormState] = useState<FormState>({
         openaiKey: "",
-        selectedModel: "",
+        selectedModel: "gpt-4o-mini",
         prompt: "Answer the following question or statement with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number).",
     });
     const [metricsHistory, setMetricsHistory] = useState<Metrics[]>([]);
@@ -103,6 +127,13 @@ export default function OpenAIPlayground() {
     const [outputField, setOutputField] = useState("expectedOutput");
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [isEvaluating, setIsEvaluating] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [elapsedTime, setElapsedTime] = useState<number>(0);
+    const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(
+        null
+    );
+    const [abortController, setAbortController] =
+        useState<AbortController | null>(null);
 
     useEffect(() => {
         const storedData = localStorage.getItem("openaiPlaygroundData");
@@ -131,6 +162,15 @@ export default function OpenAIPlayground() {
         );
     }, [formState, dataset, metricsHistory]);
 
+    // Add cleanup effect for the timer
+    useEffect(() => {
+        return () => {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+        };
+    }, [timerInterval]);
+
     const handleRunEvaluation = async () => {
         if (
             !formState.openaiKey ||
@@ -141,118 +181,181 @@ export default function OpenAIPlayground() {
             return;
         }
 
+        // Create new AbortController
+        const controller = new AbortController();
+        setAbortController(controller);
+
         setIsEvaluating(true);
-        const updatedDataset = [...dataset];
-        const openai = createOpenAI({
-            apiKey: formState.openaiKey,
-        });
+        setProgress(0);
+        setElapsedTime(0);
 
-        const evaluationPromises = updatedDataset.map(async (item, i) => {
-            try {
-                const { object } = await generateObject({
-                    model: openai(formState.selectedModel),
-                    schema: outputSchema,
-                    prompt: `${formState.prompt}\n\nInput: ${item.input}`,
-                    system: "You are a helpful AI that responds with a JSON object containing an 'output' key with the appropriate value (boolean, string, or number) and an optional 'explanation' key with a string explaining your reasoning.",
-                });
+        const interval = setInterval(() => {
+            setElapsedTime((prev) => prev + 1);
+        }, 1000);
+        setTimerInterval(interval);
 
-                updatedDataset[i] = {
-                    ...item,
-                    predictedOutput: object.output,
-                    explanation: object.explanation,
-                };
+        try {
+            const updatedDataset = [...dataset];
+            const openai = createOpenAI({
+                apiKey: formState.openaiKey,
+            });
 
-                return {
-                    predicted: object.output,
-                    expected: item.expectedOutput,
-                    error: null,
-                };
-            } catch (error) {
-                console.error(
-                    "Error generating object for item",
-                    i,
-                    ":",
-                    error
-                );
-                updatedDataset[i] = {
-                    ...item,
-                    predictedOutput: "Error: Failed to generate output",
-                };
-                return {
-                    predicted: null, // Treat errors as a special case
-                    expected: item.expectedOutput,
-                    error: true,
-                };
-            }
-        });
+            let completedItems = 0;
+            const totalItems = updatedDataset.length;
 
-        const results = await Promise.all(evaluationPromises);
+            const evaluationPromises = updatedDataset.map(async (item, i) => {
+                try {
+                    const { object } = await generateObject({
+                        model: openai(
+                            MODELS[formState.selectedModel].value,
+                            MODELS[formState.selectedModel].reasoningEffort
+                                ? {
+                                      reasoningEffort:
+                                          (MODELS[formState.selectedModel]
+                                              .reasoningEffort as
+                                              | "medium"
+                                              | "high"
+                                              | "low") || "medium",
+                                  }
+                                : {}
+                        ),
+                        schema: outputSchema,
+                        prompt: `${formState.prompt}\n\nInput: ${item.input}`,
+                        system: "You are a helpful AI that responds with a JSON object containing an 'output' key with the appropriate value (boolean, string, or number) and an optional 'explanation' key with a string explaining your reasoning.",
+                        abortSignal: controller.signal,
+                    });
 
-        let truePositives = 0;
-        let falsePositives = 0;
-        let falseNegatives = 0;
-        let trueNegatives = 0; // Optional, for completeness
+                    completedItems++;
+                    setProgress((completedItems / totalItems) * 100);
 
-        results.forEach((result) => {
-            if (result.error) {
-                // Handle errors: assume it's a miss based on expected value
-                if (result.expected === true) {
-                    falseNegatives++; // Expected true, but failed
+                    updatedDataset[i] = {
+                        ...item,
+                        predictedOutput: object.output,
+                        explanation: object.explanation,
+                    };
+
+                    return {
+                        predicted: object.output,
+                        expected: item.expectedOutput,
+                        error: null,
+                    };
+                } catch (error) {
+                    completedItems++;
+                    setProgress((completedItems / totalItems) * 100);
+                    console.error(
+                        "Error generating object for item",
+                        i,
+                        ":",
+                        error
+                    );
+                    updatedDataset[i] = {
+                        ...item,
+                        predictedOutput: "Error: Failed to generate output",
+                    };
+                    return {
+                        predicted: null, // Treat errors as a special case
+                        expected: item.expectedOutput,
+                        error: true,
+                    };
+                }
+            });
+
+            const results = await Promise.all(evaluationPromises);
+
+            let truePositives = 0;
+            let falsePositives = 0;
+            let falseNegatives = 0;
+            let trueNegatives = 0; // Optional, for completeness
+
+            results.forEach((result) => {
+                if (result.error) {
+                    // Handle errors: assume it's a miss based on expected value
+                    if (result.expected === true) {
+                        falseNegatives++; // Expected true, but failed
+                    } else {
+                        falsePositives++; // Expected false, but failed
+                    }
                 } else {
-                    falsePositives++; // Expected false, but failed
+                    if (result.predicted === true && result.expected === true) {
+                        truePositives++;
+                    } else if (
+                        result.predicted === true &&
+                        result.expected === false
+                    ) {
+                        falsePositives++;
+                    } else if (
+                        result.predicted === false &&
+                        result.expected === true
+                    ) {
+                        falseNegatives++;
+                    } else if (
+                        result.predicted === false &&
+                        result.expected === false
+                    ) {
+                        trueNegatives++;
+                    }
                 }
-            } else {
-                if (result.predicted === true && result.expected === true) {
-                    truePositives++;
-                } else if (
-                    result.predicted === true &&
-                    result.expected === false
-                ) {
-                    falsePositives++;
-                } else if (
-                    result.predicted === false &&
-                    result.expected === true
-                ) {
-                    falseNegatives++;
-                } else if (
-                    result.predicted === false &&
-                    result.expected === false
-                ) {
-                    trueNegatives++;
-                }
+            });
+
+            setDataset(updatedDataset);
+
+            const precision =
+                truePositives / (truePositives + falsePositives) || 0;
+            const recall =
+                truePositives / (truePositives + falseNegatives) || 0;
+            const f1Score =
+                (2 * (precision * recall)) / (precision + recall) || 0;
+
+            const newMetrics = {
+                precision,
+                recall,
+                f1Score,
+                prompt: formState.prompt,
+                model: formState.selectedModel,
+            };
+
+            // Only add metrics to history if not aborted
+            if (!controller.signal.aborted) {
+                setMetricsHistory((prevHistory) => [
+                    ...prevHistory,
+                    newMetrics,
+                ]);
             }
-        });
 
-        setDataset(updatedDataset);
+            // Optional: Log for debugging
+            console.log(
+                JSON.stringify(
+                    {
+                        truePositives,
+                        falsePositives,
+                        falseNegatives,
+                        trueNegatives,
+                    },
+                    null,
+                    2
+                )
+            );
+        } catch (error) {
+            if (error instanceof Error && error.name === "AbortError") {
+                console.log("Evaluation was cancelled");
+            } else {
+                console.error("Evaluation failed:", error);
+            }
+        } finally {
+            setIsEvaluating(false);
+            setAbortController(null);
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                setTimerInterval(null);
+            }
+            setElapsedTime(0); // Reset the elapsed time
+        }
+    };
 
-        const precision = truePositives / (truePositives + falsePositives) || 0;
-        const recall = truePositives / (truePositives + falseNegatives) || 0;
-        const f1Score = (2 * (precision * recall)) / (precision + recall) || 0;
-
-        const newMetrics = {
-            precision,
-            recall,
-            f1Score,
-            prompt: formState.prompt,
-            model: formState.selectedModel,
-        };
-
-        setMetricsHistory((prevHistory) => [...prevHistory, newMetrics]);
-        setIsEvaluating(false);
-
-        // Optional: Log for debugging
-        console.log(
-            JSON.stringify(
-                {
-                    truePositives,
-                    falsePositives,
-                    falseNegatives,
-                    trueNegatives,
-                },
-                null,
-                2
-            )
-        );
+    const handleCancel = () => {
+        if (abortController) {
+            abortController.abort();
+        }
     };
 
     const toggleRowExpansion = (index: number) => {
@@ -313,6 +416,15 @@ export default function OpenAIPlayground() {
         setFormState((prev) => ({ ...prev, prompt }));
     };
 
+    // Format time as mm:ss
+    const formatTime = (seconds: number): string => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+            .toString()
+            .padStart(2, "0")}`;
+    };
+
     return (
         <div className="container mx-auto p-4 space-y-8">
             <h1 className="text-2xl font-bold mb-4">OpenAI Playground</h1>
@@ -341,7 +453,7 @@ export default function OpenAIPlayground() {
                         onValueChange={(value) =>
                             setFormState((prev) => ({
                                 ...prev,
-                                selectedModel: value,
+                                selectedModel: value as keyof typeof MODELS,
                             }))
                         }
                     >
@@ -349,14 +461,11 @@ export default function OpenAIPlayground() {
                             <SelectValue placeholder="Select a model" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="gpt-4o-mini">
-                                GPT-4o-mini
-                            </SelectItem>
-                            <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                            <SelectItem value="o3-mini">o3-mini</SelectItem>
-                            <SelectItem value="o3-mini-high">
-                                o3-mini-high
-                            </SelectItem>
+                            {Object.entries(MODELS).map(([key, model]) => (
+                                <SelectItem key={key} value={key}>
+                                    {model.name}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
@@ -377,9 +486,28 @@ export default function OpenAIPlayground() {
                     />
                 </div>
 
-                <Button onClick={handleRunEvaluation} disabled={isEvaluating}>
-                    {isEvaluating ? "Evaluating..." : "Run Evaluation"}
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        onClick={handleRunEvaluation}
+                        disabled={isEvaluating}
+                    >
+                        {isEvaluating ? "Evaluating..." : "Run Evaluation"}
+                    </Button>
+                    {isEvaluating && (
+                        <Button variant="destructive" onClick={handleCancel}>
+                            Cancel
+                        </Button>
+                    )}
+                </div>
+                {isEvaluating && (
+                    <div className="space-y-2">
+                        <Progress value={progress} />
+                        <p className="text-sm text-gray-500 text-center">
+                            Processing examples: {Math.round(progress)}% (
+                            {formatTime(elapsedTime)})
+                        </p>
+                    </div>
+                )}
             </div>
 
             <div className="bg-gray-100 p-4 rounded-lg">
@@ -570,7 +698,7 @@ export default function OpenAIPlayground() {
 
             <div>
                 <h2 className="text-xl font-semibold mb-2">Dataset</h2>
-                <Table className="max-w-2xl">
+                <Table className="max-w-3xl">
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[50px]"></TableHead>
