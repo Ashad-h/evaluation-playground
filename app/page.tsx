@@ -65,6 +65,7 @@ interface Metrics {
     f1Score: number;
     prompt: string;
     model: string;
+    cost: number; // Renamed from estimatedCost
 }
 
 // Define a schema for dataset items
@@ -93,21 +94,29 @@ const MODELS = {
         value: "gpt-4o-mini",
         name: "GPT-4o-mini",
         reasoningEffort: null,
+        inputPrice: 0.15, // per 1M tokens ($0.15 per 1M)
+        outputPrice: 0.6, // per 1M tokens ($0.60 per 1M)
     },
     "gpt-4o": {
         value: "gpt-4o",
         name: "GPT-4o",
         reasoningEffort: null,
+        inputPrice: 2.5, // per 1M tokens ($2.50 per 1M)
+        outputPrice: 10, // per 1M tokens ($10.00 per 1M)
     },
     "o3-mini": {
         value: "o3-mini",
         name: "o3-mini",
         reasoningEffort: "medium",
+        inputPrice: 1.1, // per 1M tokens ($1.10 per 1M)
+        outputPrice: 4.4, // per 1M tokens ($4.40 per 1M)
     },
     "o3-mini-high": {
         value: "o3-mini",
         name: "o3-mini-high",
         reasoningEffort: "high",
+        inputPrice: 1.1, // per 1M tokens ($1.10 per 1M)
+        outputPrice: 4.4, // per 1M tokens ($4.40 per 1M)
     },
 };
 
@@ -196,6 +205,8 @@ export default function OpenAIPlayground() {
 
         try {
             const updatedDataset = [...dataset];
+            let totalCost = 0;
+
             const openai = createOpenAI({
                 apiKey: formState.openaiKey,
             });
@@ -205,7 +216,7 @@ export default function OpenAIPlayground() {
 
             const evaluationPromises = updatedDataset.map(async (item, i) => {
                 try {
-                    const { object } = await generateObject({
+                    const { object, usage } = await generateObject({
                         model: openai(
                             MODELS[formState.selectedModel].value,
                             MODELS[formState.selectedModel].reasoningEffort
@@ -224,6 +235,14 @@ export default function OpenAIPlayground() {
                         system: "You are a helpful AI that responds with a JSON object containing an 'output' key with the appropriate value (boolean, string, or number) and an optional 'explanation' key with a string explaining your reasoning.",
                         abortSignal: controller.signal,
                     });
+
+                    const selectedModel = MODELS[formState.selectedModel];
+                    const requestCost =
+                        (usage.promptTokens * selectedModel.inputPrice) /
+                            1_000_000 +
+                        (usage.completionTokens * selectedModel.outputPrice) /
+                            1_000_000;
+                    totalCost += requestCost;
 
                     completedItems++;
                     setProgress((completedItems / totalItems) * 100);
@@ -312,6 +331,7 @@ export default function OpenAIPlayground() {
                 f1Score,
                 prompt: formState.prompt,
                 model: formState.selectedModel,
+                cost: totalCost, // Renamed from estimatedCost
             };
 
             // Only add metrics to history if not aborted
@@ -407,8 +427,16 @@ export default function OpenAIPlayground() {
                 f1Score: Math.max(best.f1Score, current.f1Score),
                 prompt: best.prompt,
                 model: best.model,
+                cost: best.cost,
             }),
-            { precision: 0, recall: 0, f1Score: 0, prompt: "", model: "" }
+            {
+                precision: 0,
+                recall: 0,
+                f1Score: 0,
+                prompt: "",
+                model: "",
+                cost: 0,
+            }
         );
     };
 
@@ -521,6 +549,7 @@ export default function OpenAIPlayground() {
                                 <TableHead>Recall</TableHead>
                                 <TableHead>F1 Score</TableHead>
                                 <TableHead>Model</TableHead>
+                                <TableHead>Cost</TableHead>
                                 <TableHead>Prompt</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -582,6 +611,9 @@ export default function OpenAIPlayground() {
                                             </TableCell>
                                             <TableCell>
                                                 {metrics.model}
+                                            </TableCell>
+                                            <TableCell>
+                                                ${metrics.cost.toFixed(4)}
                                             </TableCell>
                                             <TableCell>
                                                 <Collapsible>
