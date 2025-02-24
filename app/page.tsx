@@ -58,6 +58,7 @@ interface Metrics {
     precision: number;
     recall: number;
     f1Score: number;
+    prompt: string;
 }
 
 // Define a schema for dataset items
@@ -75,12 +76,18 @@ const initialDataset: DatasetItem[] = [
     },
 ];
 
+interface FormState {
+    openaiKey: string;
+    selectedModel: string;
+    prompt: string;
+}
+
 export default function OpenAIPlayground() {
-    const [openaiKey, setOpenaiKey] = useState("");
-    const [selectedModel, setSelectedModel] = useState("");
-    const [prompt, setPrompt] = useState(
-        "Answer the following question or statement with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number)."
-    );
+    const [formState, setFormState] = useState<FormState>({
+        openaiKey: "",
+        selectedModel: "",
+        prompt: "Answer the following question or statement with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number).",
+    });
     const [metricsHistory, setMetricsHistory] = useState<Metrics[]>([]);
     const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>(
         {}
@@ -94,11 +101,14 @@ export default function OpenAIPlayground() {
 
     useEffect(() => {
         const storedData = localStorage.getItem("openaiPlaygroundData");
+        console.log(storedData);
         if (storedData) {
             const parsedData = JSON.parse(storedData);
-            setOpenaiKey(parsedData.openaiKey || "");
-            setSelectedModel(parsedData.selectedModel || "");
-            setPrompt(parsedData.prompt || prompt);
+            setFormState({
+                openaiKey: parsedData.openaiKey || "",
+                selectedModel: parsedData.selectedModel || "",
+                prompt: parsedData.prompt || formState.prompt,
+            });
             setDataset(parsedData.dataset || initialDataset);
             setMetricsHistory(parsedData.metricsHistory || []);
         }
@@ -106,9 +116,7 @@ export default function OpenAIPlayground() {
 
     useEffect(() => {
         const dataToStore = {
-            openaiKey,
-            selectedModel,
-            prompt,
+            ...formState,
             dataset,
             metricsHistory,
         };
@@ -116,24 +124,14 @@ export default function OpenAIPlayground() {
             "openaiPlaygroundData",
             JSON.stringify(dataToStore)
         );
-    }, [openaiKey, selectedModel, prompt, dataset, metricsHistory]);
-
-    useEffect(() => {
-        const dataToStore = {
-            openaiKey,
-            selectedModel,
-            prompt,
-            dataset,
-            metricsHistory,
-        };
-        localStorage.setItem(
-            "openaiPlaygroundData",
-            JSON.stringify(dataToStore)
-        );
-    }, [dataset]);
+    }, [formState, dataset, metricsHistory]);
 
     const handleRunEvaluation = async () => {
-        if (!openaiKey || !selectedModel || !prompt) {
+        if (
+            !formState.openaiKey ||
+            !formState.selectedModel ||
+            !formState.prompt
+        ) {
             alert("Please fill in all fields");
             return;
         }
@@ -141,15 +139,15 @@ export default function OpenAIPlayground() {
         setIsEvaluating(true);
         const updatedDataset = [...dataset];
         const openai = createOpenAI({
-            apiKey: openaiKey,
+            apiKey: formState.openaiKey,
         });
 
         const evaluationPromises = updatedDataset.map(async (item, i) => {
             try {
                 const { object } = await generateObject({
-                    model: openai(selectedModel),
+                    model: openai(formState.selectedModel),
                     schema: outputSchema,
-                    prompt: `${prompt}\n\nInput: ${item.input}`,
+                    prompt: `${formState.prompt}\n\nInput: ${item.input}`,
                     system: "You are a helpful AI that responds with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number) based on the input question or statement.",
                 });
 
@@ -226,6 +224,7 @@ export default function OpenAIPlayground() {
             precision,
             recall,
             f1Score,
+            prompt: formState.prompt,
         };
 
         setMetricsHistory((prevHistory) => [...prevHistory, newMetrics]);
@@ -293,9 +292,14 @@ export default function OpenAIPlayground() {
                 precision: Math.max(best.precision, current.precision),
                 recall: Math.max(best.recall, current.recall),
                 f1Score: Math.max(best.f1Score, current.f1Score),
+                prompt: best.prompt,
             }),
-            { precision: 0, recall: 0, f1Score: 0 }
+            { precision: 0, recall: 0, f1Score: 0, prompt: "" }
         );
+    };
+
+    const handleLoadPrompt = (prompt: string) => {
+        setFormState((prev) => ({ ...prev, prompt }));
     };
 
     return (
@@ -308,8 +312,13 @@ export default function OpenAIPlayground() {
                     <Input
                         id="openai-key"
                         type="password"
-                        value={openaiKey}
-                        onChange={(e) => setOpenaiKey(e.target.value)}
+                        value={formState.openaiKey}
+                        onChange={(e) =>
+                            setFormState((prev) => ({
+                                ...prev,
+                                openaiKey: e.target.value,
+                            }))
+                        }
                         placeholder="Enter your OpenAI API key"
                     />
                 </div>
@@ -317,8 +326,13 @@ export default function OpenAIPlayground() {
                 <div>
                     <Label htmlFor="model-select">Select Model</Label>
                     <Select
-                        value={selectedModel}
-                        onValueChange={setSelectedModel}
+                        value={formState.selectedModel}
+                        onValueChange={(value) =>
+                            setFormState((prev) => ({
+                                ...prev,
+                                selectedModel: value,
+                            }))
+                        }
                     >
                         <SelectTrigger id="model-select">
                             <SelectValue placeholder="Select a model" />
@@ -336,8 +350,13 @@ export default function OpenAIPlayground() {
                     <Label htmlFor="prompt">Prompt</Label>
                     <Textarea
                         id="prompt"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
+                        value={formState.prompt}
+                        onChange={(e) =>
+                            setFormState((prev) => ({
+                                ...prev,
+                                prompt: e.target.value,
+                            }))
+                        }
                         placeholder="Enter your prompt here"
                         rows={4}
                     />
@@ -358,6 +377,7 @@ export default function OpenAIPlayground() {
                                 <TableHead>Precision</TableHead>
                                 <TableHead>Recall</TableHead>
                                 <TableHead>F1 Score</TableHead>
+                                <TableHead>Prompt</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -415,6 +435,37 @@ export default function OpenAIPlayground() {
                                                     ).toFixed(1)}
                                                     %
                                                 </span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Collapsible>
+                                                    <CollapsibleTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <ChevronRight className="h-4 w-4" />
+                                                        </Button>
+                                                    </CollapsibleTrigger>
+                                                    <CollapsibleContent className="space-y-2">
+                                                        <div className="p-2 bg-gray-50 rounded">
+                                                            <p className="text-sm whitespace-pre-wrap">
+                                                                {metrics.prompt}
+                                                            </p>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="mt-2"
+                                                                onClick={() =>
+                                                                    handleLoadPrompt(
+                                                                        metrics.prompt
+                                                                    )
+                                                                }
+                                                            >
+                                                                Use This Prompt
+                                                            </Button>
+                                                        </div>
+                                                    </CollapsibleContent>
+                                                </Collapsible>
                                             </TableCell>
                                         </TableRow>
                                     ));
@@ -529,7 +580,11 @@ export default function OpenAIPlayground() {
                                         </Button>
                                     </TableCell>
                                     <TableCell>
-                                        {item.input.slice(0, 50)}...
+                                        {item.input.length > 50
+                                            ? `${item.input
+                                                  .split("\n")[0]
+                                                  .slice(0, 50)}...`
+                                            : item.input}
                                     </TableCell>
                                     <TableCell>
                                         {String(item.expectedOutput)}
@@ -555,7 +610,9 @@ export default function OpenAIPlayground() {
                                                     <h3 className="font-semibold mb-2">
                                                         Input:
                                                     </h3>
-                                                    <p>{item.input}</p>
+                                                    <pre className="whitespace-pre-wrap break-words bg-gray-100 p-2 rounded">
+                                                        {item.input}
+                                                    </pre>
                                                 </div>
                                                 <div>
                                                     <h3 className="font-semibold mb-2">
