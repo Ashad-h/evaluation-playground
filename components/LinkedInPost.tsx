@@ -2,7 +2,7 @@ import Image from "next/image";
 import EliotImage from "./images/eliot.jpeg";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { stringToJSON, JSONToString } from "@/utils/tiptap";
 
 interface LinkedInPostProps {
@@ -21,6 +21,7 @@ export function LinkedInPost({
     onChange,
     editable = false,
 }: LinkedInPostProps) {
+    const postRef = useRef<HTMLDivElement>(null);
     const editor = useEditor({
         extensions: [StarterKit],
         content: {
@@ -49,6 +50,7 @@ export function LinkedInPost({
 
     return (
         <div
+            ref={postRef}
             className={`mx-auto relative flex bg-white dark:bg-[#1b1f23] flex-col shadow-[0_0px_0px_1px_rgba(140,140,140,0.2)] ${previewWidth} transition-all duration-300 rounded-[0.4rem] my-1`}
         >
             <div className="flex flex-row w-full">

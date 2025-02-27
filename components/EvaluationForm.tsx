@@ -13,6 +13,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { FormState } from "@/types";
 import { MODELS, ModelKey } from "@/constants";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface EvaluationFormProps {
     formState: FormState;
@@ -91,6 +92,25 @@ export function EvaluationForm({
                     placeholder="Enter your prompt here"
                     rows={4}
                 />
+            </div>
+
+            <div className="flex items-center space-x-2">
+                <Checkbox
+                    id="evaluate-images"
+                    checked={formState.evaluateImages}
+                    onCheckedChange={(checked) =>
+                        setFormState((prev) => ({
+                            ...prev,
+                            evaluateImages: checked === true,
+                        }))
+                    }
+                />
+                <Label
+                    htmlFor="evaluate-images"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    Evaluate LinkedIn post images
+                </Label>
             </div>
 
             <div className="flex gap-2">

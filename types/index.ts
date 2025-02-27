@@ -35,4 +35,5 @@ export interface FormState {
     openaiKey: string;
     selectedModel: ModelKey;
     prompt: string;
+    evaluateImages: boolean;
 }

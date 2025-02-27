@@ -1,15 +1,16 @@
-import { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import { DatasetItem, datasetItemSchema } from "@/types";
 import { initialDataset } from "@/constants";
-import { useLocalStorage } from "./useLocalStorage";
+import { useDatasetStorage } from "./useDatasetStorage";
+import { checkLocalStorage } from "@/utils/testLocalStorage";
 
 /**
  * Custom hook for managing the dataset
  * @returns Dataset state and management functions
  */
 export function useDataset() {
-    const [dataset, setDataset] = useLocalStorage<DatasetItem[]>(
+    const [dataset, setDataset] = useDatasetStorage(
         "dataset",
         initialDataset
     );
@@ -20,6 +21,7 @@ export function useDataset() {
     const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>(
         {}
     );
+
 
     /**
      * Toggles the expansion state of a dataset row

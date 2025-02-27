@@ -88,6 +88,7 @@ export default function OpenAIPlayground() {
         dataset={dataset}
         expandedRows={expandedRows}
         onToggleRow={toggleRowExpansion}
+        evaluateImages={formState.evaluateImages}
       />
     </div>
   );

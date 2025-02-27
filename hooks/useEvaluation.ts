@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateObject } from "ai";
+import { generateObject, TextPart, ImagePart, CoreMessage } from "ai";
 import { DatasetItem, FormState, Metrics, outputSchema } from "@/types";
 import { MODELS, ModelKey } from "@/constants";
 import { useLocalStorage } from "./useLocalStorage";
+import { toPng } from "html-to-image";
 
 /**
  * Custom hook for managing the evaluation process
@@ -19,6 +20,7 @@ export function useEvaluation(
         openaiKey: "",
         selectedModel: "gpt-4o-mini" as ModelKey,
         prompt: "Answer the following question or statement with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number).",
+        evaluateImages: false,
     });
 
     const [metricsHistory, setMetricsHistory] = useLocalStorage<Metrics[]>(
@@ -42,6 +44,29 @@ export function useEvaluation(
             }
         };
     }, [timerInterval]);
+
+    /**
+     * Captures an image of a LinkedIn post
+     * @param index The index of the post to capture
+     * @returns A promise that resolves to the data URL of the captured image
+     */
+    const captureLinkedInPost = async (index: number): Promise<string> => {
+        const postElement = document.getElementById(`linkedin-post-${index}`);
+        if (!postElement) {
+            throw new Error(`LinkedIn post element with id linkedin-post-${index} not found`);
+        }
+
+        try {
+            const dataUrl = await toPng(postElement, {
+                quality: 0.95,
+                pixelRatio: 2,
+            });
+            return dataUrl;
+        } catch (error) {
+            console.error("Error capturing LinkedIn post:", error);
+            throw error;
+        }
+    };
 
     /**
      * Runs the evaluation on the dataset
@@ -83,23 +108,50 @@ export function useEvaluation(
 
             const evaluationPromises = updatedDataset.map(async (item, i) => {
                 try {
+                    // Create the system message
+                    const systemMessage =
+                        "You are a helpful AI that responds with a JSON object containing an 'output' key with the appropriate value (boolean, string, or number) and an 'explanation' key with a string explaining your reasoning.";
+
+                    let message: CoreMessage = {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: `${formState.prompt}`,
+                            },
+                        ],
+                    };
+
+                    // If evaluating images, capture the LinkedIn post as an image
+                    if (formState.evaluateImages) {
+                        try {
+                            const imageUrl = await captureLinkedInPost(i);
+                            console.log(`Captured image for item ${i}:`, imageUrl);
+                            (message.content as Array<TextPart | ImagePart>).push({
+                                type: "image",
+                                image: imageUrl,
+                            });
+                        } catch (error) {
+                            console.error(`Failed to capture image for item ${i}:`, error);
+                            // Fall back to text if image capture fails
+                            (message.content as Array<TextPart>).push({
+                                type: "text",
+                                text: `${item.input}`,
+                            });
+                        }
+                    } else {
+                        // Just use the text input
+                        (message.content as Array<TextPart>).push({
+                            type: "text",
+                            text: `${item.input}`,
+                        });
+                    }
+
                     const { object, usage } = await generateObject({
-                        model: openai(
-                            MODELS[formState.selectedModel].value,
-                            MODELS[formState.selectedModel].reasoningEffort
-                                ? {
-                                      reasoningEffort:
-                                          (MODELS[formState.selectedModel]
-                                              .reasoningEffort as
-                                              | "medium"
-                                              | "high"
-                                              | "low") || "medium",
-                                  }
-                                : {}
-                        ),
+                        model: openai(MODELS[formState.selectedModel].value),
                         schema: outputSchema,
-                        prompt: `${formState.prompt}\n\nInput: ${item.input}`,
-                        system: "You are a helpful AI that responds with a JSON object containing an 'output' key with the appropriate value (boolean, string, or number) and an optional 'explanation' key with a string explaining your reasoning.",
+                        system: systemMessage,
+                        messages: [message],
                         abortSignal: controller.signal,
                     });
 
