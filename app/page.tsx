@@ -550,7 +550,9 @@ export default function OpenAIPlayground() {
                                 <TableHead>F1 Score</TableHead>
                                 <TableHead>Model</TableHead>
                                 <TableHead>Cost</TableHead>
-                                <TableHead>Average Cost per 100 examples</TableHead>
+                                <TableHead>
+                                    Average Cost per 100 examples
+                                </TableHead>
                                 <TableHead>Prompt</TableHead>
                             </TableRow>
                         </TableHeader>
