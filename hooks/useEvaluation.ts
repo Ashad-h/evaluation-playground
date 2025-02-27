@@ -51,17 +51,50 @@ export function useEvaluation(
      * @returns A promise that resolves to the data URL of the captured image
      */
     const captureLinkedInPost = async (index: number): Promise<string> => {
+        // Add a small delay to ensure the element is fully rendered
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const postElement = document.getElementById(`linkedin-post-${index}`);
         if (!postElement) {
             throw new Error(`LinkedIn post element with id linkedin-post-${index} not found`);
         }
+        
+        console.log(`Capturing LinkedIn post ${index}`, postElement);
 
         try {
-            const dataUrl = await toPng(postElement, {
-                quality: 0.95,
-                pixelRatio: 2,
-            });
-            return dataUrl;
+            // Make sure the element is visible for capture
+            const parentElement = postElement.parentElement;
+            if (parentElement) {
+                const originalStyle = parentElement.style.cssText;
+                // Temporarily make it visible for capture
+                parentElement.style.visibility = 'visible';
+                parentElement.style.position = 'fixed';
+                parentElement.style.top = '0';
+                parentElement.style.left = '0';
+                parentElement.style.opacity = '1';
+                parentElement.style.pointerEvents = 'auto';
+                parentElement.style.zIndex = '-1000'; // Behind everything else
+                
+                // Wait a bit for the styles to apply
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                const dataUrl = await toPng(postElement, {
+                    quality: 0.95,
+                    pixelRatio: 2,
+                });
+                
+                // Restore original style
+                parentElement.style.cssText = originalStyle;
+                
+                return dataUrl;
+            } else {
+                // Fallback if no parent element
+                const dataUrl = await toPng(postElement, {
+                    quality: 0.95,
+                    pixelRatio: 2,
+                });
+                return dataUrl;
+            }
         } catch (error) {
             console.error("Error capturing LinkedIn post:", error);
             throw error;
@@ -122,29 +155,26 @@ export function useEvaluation(
                         ],
                     };
 
-                    // If evaluating images, capture the LinkedIn post as an image
+                    // Always add the text input
+                    (message.content as Array<TextPart>).push({
+                        type: "text",
+                        text: `${item.input}`,
+                    });
+                    
+                    // If evaluating images, also capture and add the LinkedIn post as an image
                     if (formState.evaluateImages) {
                         try {
                             const imageUrl = await captureLinkedInPost(i);
-                            console.log(`Captured image for item ${i}:`, imageUrl);
+                            console.log(`Captured image for item ${i}`);
+                            // Add the image to the message but don't store it in the dataset
                             (message.content as Array<TextPart | ImagePart>).push({
                                 type: "image",
                                 image: imageUrl,
                             });
                         } catch (error) {
                             console.error(`Failed to capture image for item ${i}:`, error);
-                            // Fall back to text if image capture fails
-                            (message.content as Array<TextPart>).push({
-                                type: "text",
-                                text: `${item.input}`,
-                            });
+                            // Continue with just the text input if image capture fails
                         }
-                    } else {
-                        // Just use the text input
-                        (message.content as Array<TextPart>).push({
-                            type: "text",
-                            text: `${item.input}`,
-                        });
                     }
 
                     const { object, usage } = await generateObject({

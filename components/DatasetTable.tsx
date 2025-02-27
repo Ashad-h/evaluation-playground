@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
     Table,
     TableBody,
@@ -24,6 +24,12 @@ export function DatasetTable({
     onToggleRow,
     evaluateImages = false,
 }: DatasetTableProps) {
+    // Force render of all LinkedIn posts when evaluateImages is true
+    useEffect(() => {
+        if (evaluateImages) {
+            console.log("Preparing LinkedIn posts for image capture");
+        }
+    }, [evaluateImages, dataset]);
     return (
         <div>
             <h2 className="text-xl font-semibold mb-2">Dataset</h2>
@@ -132,15 +138,19 @@ export function DatasetTable({
                                     </div>
                                 </TableCell>
                             </TableRow>
-                            {/* Hidden LinkedIn post for image capture */}
-                            <div className="hidden">
-                                <div id={`linkedin-post-${index}`}>
-                                    <LinkedInPost
-                                        content={item.input}
-                                        previewWidth="w-[350px]"
-                                    />
-                                </div>
-                            </div>
+                            {/* LinkedIn post for image capture - visually hidden but still rendered */}
+                            <TableRow className="h-0 overflow-hidden">
+                                <TableCell colSpan={4} className="p-0 border-0">
+                                    <div className="opacity-0 pointer-events-none" style={{ visibility: 'hidden', position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                                        <div id={`linkedin-post-${index}`}>
+                                            <LinkedInPost
+                                                content={item.input}
+                                                previewWidth="w-[350px]"
+                                            />
+                                        </div>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
                         </React.Fragment>
                     ))}
                 </TableBody>
