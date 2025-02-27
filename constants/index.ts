@@ -35,13 +35,6 @@ export const MODELS = {
         inputPrice: 3, // per 1M tokens ($0.50 per 1M)
         outputPrice: 15, // per 1M tokens ($2.00 per 1M)
     },
-    "anthropic/claude-3.7-sonnet:thinking": {
-        value: "anthropic/claude-3.7-sonnet:thinking",
-        name: "Claude 3.7 Sonnet Thinking",
-        reasoningEffort: "high",
-        inputPrice: 3, // per 1M tokens ($0.50 per 1M)
-        outputPrice: 15, // per 1M tokens ($2.00 per 1M)
-    },
 } as const;
 
 // Type for model keys
