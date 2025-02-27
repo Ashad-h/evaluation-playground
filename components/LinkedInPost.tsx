@@ -1,10 +1,9 @@
 import Image from "next/image";
 import EliotImage from "./images/eliot.jpeg";
 import { useEditor, EditorContent } from "@tiptap/react";
-
 import { StarterKit } from "@tiptap/starter-kit";
 import { useEffect } from "react";
-import type { JSONContent } from "@tiptap/core";
+import { stringToJSON, JSONToString } from "@/utils/tiptap";
 
 interface LinkedInPostProps {
     content: string;
@@ -13,46 +12,15 @@ interface LinkedInPostProps {
     editable?: boolean;
 }
 
+/**
+ * A component that displays a LinkedIn post with an optional editor
+ */
 export function LinkedInPost({
     content,
     previewWidth,
     onChange,
     editable = false,
 }: LinkedInPostProps) {
-    function stringToJSON(str: string) {
-        try {
-            // Split text into paragraphs, keeping empty ones
-            const paragraphs = str.trim().split("\n");
-
-            return {
-                type: "doc",
-                content: paragraphs.map((p) => ({
-                    type: "paragraph",
-                    content: p.length > 0 ? [{ type: "text", text: p }] : [],
-                })),
-            };
-        } catch (e) {
-            console.error("Error converting string to JSON:", e);
-            return {
-                type: "doc",
-                content: [
-                    {
-                        type: "paragraph",
-                        content: [{ type: "text", text: "" }],
-                    },
-                ],
-            };
-        }
-    }
-
-    function JSONToString(json: JSONContent) {
-        return (
-            json.content
-                ?.map((p: JSONContent) => p.content?.[0]?.text || "")
-                .join("\n") || ""
-        );
-    }
-
     const editor = useEditor({
         extensions: [StarterKit],
         content: {
@@ -68,16 +36,16 @@ export function LinkedInPost({
         onUpdate: ({ editor }) => {
             if (onChange) {
                 const newContent = editor.getJSON();
-                console.log(newContent);
-                console.log(JSONToString(newContent));
                 onChange(JSONToString(newContent));
             }
         },
     });
 
     useEffect(() => {
-        editor?.commands.setContent(stringToJSON(content));
-    }, [content]);
+        if (editor) {
+            editor.commands.setContent(stringToJSON(content));
+        }
+    }, [content, editor]);
 
     return (
         <div
