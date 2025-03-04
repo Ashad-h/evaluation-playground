@@ -129,8 +129,8 @@ export function EvaluationForm({
                 />
                 <p className="text-xs text-gray-500 mt-1">
                     Posts with fewer characters than this will always be
-                    predicted as "false". If the value is 0, the post will be
-                    evaluated regardless of the character count.
+                    predicted as &quot;false&quot;. If the value is 0, the post
+                    will be evaluated regardless of the character count.
                 </p>
             </div>
 
