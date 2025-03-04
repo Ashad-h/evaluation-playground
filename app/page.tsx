@@ -89,6 +89,11 @@ export default function OpenAIPlayground() {
         expandedRows={expandedRows}
         onToggleRow={toggleRowExpansion}
         evaluateImages={formState.evaluateImages}
+        onUpdateDatasetItem={(index, updatedItem) => {
+          const newDataset = [...dataset];
+          newDataset[index] = updatedItem;
+          setDataset(newDataset);
+        }}
       />
     </div>
   );

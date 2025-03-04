@@ -7,7 +7,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import { DatasetItem } from "@/types";
 import { LinkedInPost } from "@/components/LinkedInPost";
 
@@ -16,6 +16,7 @@ interface DatasetTableProps {
     expandedRows: Record<number, boolean>;
     onToggleRow: (index: number) => void;
     evaluateImages: boolean;
+    onUpdateDatasetItem?: (index: number, updatedItem: DatasetItem) => void;
 }
 
 export function DatasetTable({
@@ -23,6 +24,7 @@ export function DatasetTable({
     expandedRows,
     onToggleRow,
     evaluateImages = false,
+    onUpdateDatasetItem,
 }: DatasetTableProps) {
     // Force render of all LinkedIn posts when evaluateImages is true
     useEffect(() => {
@@ -30,6 +32,36 @@ export function DatasetTable({
             console.log("Preparing LinkedIn posts for image capture");
         }
     }, [evaluateImages, dataset]);
+
+    // Handle toggling boolean expected output
+    const handleToggleExpectedOutput = (index: number, currentValue: boolean) => {
+        if (onUpdateDatasetItem) {
+            const updatedItem = { ...dataset[index], expectedOutput: !currentValue };
+            onUpdateDatasetItem(index, updatedItem);
+        }
+    };
+
+    // Render boolean value as a clickable element
+    const renderBooleanValue = (value: boolean, index: number, isExpectedOutput: boolean, inParagraph: boolean = false) => {
+        if (isExpectedOutput && onUpdateDatasetItem) {
+            const Element = inParagraph ? 'span' : 'div';
+            return (
+                <Element
+                    className="flex items-center cursor-pointer"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleExpectedOutput(index, value);
+                    }}
+                >
+                    <span className={`inline-flex w-6 h-6 rounded-md items-center justify-center mr-2 ${value ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                        {value ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                    </span>
+                    {String(value)}
+                </Element>
+            );
+        }
+        return String(value);
+    };
     return (
         <div>
             <h2 className="text-xl font-semibold mb-2">Dataset</h2>
@@ -68,7 +100,9 @@ export function DatasetTable({
                                         : item.input}
                                 </TableCell>
                                 <TableCell>
-                                    {String(item.expectedOutput)}
+                                    {typeof item.expectedOutput === 'boolean'
+                                        ? renderBooleanValue(item.expectedOutput, index, true)
+                                        : String(item.expectedOutput)}
                                 </TableCell>
                                 <TableCell
                                     className={
@@ -115,7 +149,11 @@ export function DatasetTable({
                                             <h3 className="font-semibold mb-2">
                                                 Expected Output:
                                             </h3>
-                                            <p>{String(item.expectedOutput)}</p>
+                                            <p>
+                                                {typeof item.expectedOutput === 'boolean'
+                                                    ? renderBooleanValue(item.expectedOutput, index, true, true)
+                                                    : String(item.expectedOutput)}
+                                            </p>
                                         </div>
                                         <div>
                                             <h3 className="font-semibold mb-2">
