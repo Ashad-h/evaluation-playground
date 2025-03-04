@@ -113,6 +113,27 @@ export function EvaluationForm({
                 </Label>
             </div>
 
+            <div>
+                <Label htmlFor="min-char-count">Minimum Character Count</Label>
+                <Input
+                    id="min-char-count"
+                    type="number"
+                    value={formState.minCharCount?.toString() || "0"}
+                    onChange={(e) =>
+                        setFormState((prev) => ({
+                            ...prev,
+                            minCharCount: parseInt(e.target.value) || 0,
+                        }))
+                    }
+                    placeholder="Enter minimum character count"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                    Posts with fewer characters than this will always be
+                    predicted as "false". If the value is 0, the post will be
+                    evaluated regardless of the character count.
+                </p>
+            </div>
+
             <div className="flex gap-2">
                 <Button onClick={onRunEvaluation} disabled={isEvaluating}>
                     {isEvaluating ? "Evaluating..." : "Run Evaluation"}

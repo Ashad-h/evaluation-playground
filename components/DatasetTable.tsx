@@ -37,6 +37,7 @@ export function DatasetTable({
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="w-[70px]">Index</TableHead>
                         <TableHead>Input</TableHead>
                         <TableHead>Expected Output</TableHead>
                         <TableHead>Predicted Output</TableHead>
@@ -55,6 +56,9 @@ export function DatasetTable({
                                     ) : (
                                         <ChevronRight className="h-4 w-4" />
                                     )}
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                    {index + 1}
                                 </TableCell>
                                 <TableCell>
                                     {item.input.length > 50
@@ -80,8 +84,10 @@ export function DatasetTable({
                                 </TableCell>
                             </TableRow>
                             {/* Always render the LinkedIn post but keep it hidden when not expanded */}
-                            <TableRow className={expandedRows[index] ? "" : "hidden"}>
-                                <TableCell colSpan={4}>
+                            <TableRow
+                                className={expandedRows[index] ? "" : "hidden"}
+                            >
+                                <TableCell colSpan={5}>
                                     <div className="p-4 bg-gray-50 space-y-4">
                                         <div className="flex gap-4">
                                             <div className="w-fit">
@@ -109,11 +115,7 @@ export function DatasetTable({
                                             <h3 className="font-semibold mb-2">
                                                 Expected Output:
                                             </h3>
-                                            <p>
-                                                {String(
-                                                    item.expectedOutput
-                                                )}
-                                            </p>
+                                            <p>{String(item.expectedOutput)}</p>
                                         </div>
                                         <div>
                                             <h3 className="font-semibold mb-2">
@@ -140,8 +142,16 @@ export function DatasetTable({
                             </TableRow>
                             {/* LinkedIn post for image capture - visually hidden but still rendered */}
                             <TableRow className="h-0 overflow-hidden">
-                                <TableCell colSpan={4} className="p-0 border-0">
-                                    <div className="opacity-0 pointer-events-none" style={{ visibility: 'hidden', position: 'absolute', left: '-9999px', top: '-9999px' }}>
+                                <TableCell colSpan={5} className="p-0 border-0">
+                                    <div
+                                        className="opacity-0 pointer-events-none"
+                                        style={{
+                                            visibility: "hidden",
+                                            position: "absolute",
+                                            left: "-9999px",
+                                            top: "-9999px",
+                                        }}
+                                    >
                                         <div id={`linkedin-post-${index}`}>
                                             <LinkedInPost
                                                 content={item.input}

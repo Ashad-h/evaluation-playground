@@ -36,4 +36,5 @@ export interface FormState {
     selectedModel: ModelKey;
     prompt: string;
     evaluateImages: boolean;
+    minCharCount: number;
 }

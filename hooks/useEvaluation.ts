@@ -21,6 +21,7 @@ export function useEvaluation(
         selectedModel: "gpt-4o-mini" as ModelKey,
         prompt: "Answer the following question or statement with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number).",
         evaluateImages: false,
+        minCharCount: 0,
     });
 
     const [metricsHistory, setMetricsHistory] = useLocalStorage<Metrics[]>(
@@ -52,13 +53,15 @@ export function useEvaluation(
      */
     const captureLinkedInPost = async (index: number): Promise<string> => {
         // Add a small delay to ensure the element is fully rendered
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         const postElement = document.getElementById(`linkedin-post-${index}`);
         if (!postElement) {
-            throw new Error(`LinkedIn post element with id linkedin-post-${index} not found`);
+            throw new Error(
+                `LinkedIn post element with id linkedin-post-${index} not found`
+            );
         }
-        
+
         console.log(`Capturing LinkedIn post ${index}`, postElement);
 
         try {
@@ -67,25 +70,25 @@ export function useEvaluation(
             if (parentElement) {
                 const originalStyle = parentElement.style.cssText;
                 // Temporarily make it visible for capture
-                parentElement.style.visibility = 'visible';
-                parentElement.style.position = 'fixed';
-                parentElement.style.top = '0';
-                parentElement.style.left = '0';
-                parentElement.style.opacity = '1';
-                parentElement.style.pointerEvents = 'auto';
-                parentElement.style.zIndex = '-1000'; // Behind everything else
-                
+                parentElement.style.visibility = "visible";
+                parentElement.style.position = "fixed";
+                parentElement.style.top = "0";
+                parentElement.style.left = "0";
+                parentElement.style.opacity = "1";
+                parentElement.style.pointerEvents = "auto";
+                parentElement.style.zIndex = "-1000"; // Behind everything else
+
                 // Wait a bit for the styles to apply
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
+                await new Promise((resolve) => setTimeout(resolve, 100));
+
                 const dataUrl = await toPng(postElement, {
                     quality: 0.95,
                     pixelRatio: 2,
                 });
-                
+
                 // Restore original style
                 parentElement.style.cssText = originalStyle;
-                
+
                 return dataUrl;
             } else {
                 // Fallback if no parent element
@@ -141,6 +144,29 @@ export function useEvaluation(
 
             const evaluationPromises = updatedDataset.map(async (item, i) => {
                 try {
+                    // Check if the post meets the minimum character count
+                    if (
+                        formState.minCharCount > 0 &&
+                        item.input.length < formState.minCharCount &&
+                        !formState.evaluateImages
+                    ) {
+                        // If post is too short, automatically set output to false
+                        completedItems++;
+                        setProgress((completedItems / totalItems) * 100);
+
+                        updatedDataset[i] = {
+                            ...item,
+                            predictedOutput: false,
+                            explanation: `Post is too short (${item.input.length} characters). Minimum required: ${formState.minCharCount} characters.`,
+                        };
+
+                        return {
+                            predicted: false,
+                            expected: item.expectedOutput,
+                            error: null,
+                        };
+                    }
+
                     // Create the system message
                     const systemMessage =
                         "You are a helpful AI that responds with a JSON object containing an 'output' key with the appropriate value (boolean, string, or number) and an 'explanation' key with a string explaining your reasoning.";
@@ -160,19 +186,24 @@ export function useEvaluation(
                         type: "text",
                         text: `${item.input}`,
                     });
-                    
+
                     // If evaluating images, also capture and add the LinkedIn post as an image
                     if (formState.evaluateImages) {
                         try {
                             const imageUrl = await captureLinkedInPost(i);
                             console.log(`Captured image for item ${i}`);
                             // Add the image to the message but don't store it in the dataset
-                            (message.content as Array<TextPart | ImagePart>).push({
+                            (
+                                message.content as Array<TextPart | ImagePart>
+                            ).push({
                                 type: "image",
                                 image: imageUrl,
                             });
                         } catch (error) {
-                            console.error(`Failed to capture image for item ${i}:`, error);
+                            console.error(
+                                `Failed to capture image for item ${i}:`,
+                                error
+                            );
                             // Continue with just the text input if image capture fails
                         }
                     }
