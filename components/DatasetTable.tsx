@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Table,
     TableBody,
@@ -7,9 +7,23 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ChevronDown, ChevronRight, Check, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ChevronDown, ChevronRight, Check, X, Download } from "lucide-react";
 import { DatasetItem } from "@/types";
 import { LinkedInPost } from "@/components/LinkedInPost";
+import { exportDatasetToJson } from "@/lib/utils";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DatasetTableProps {
     dataset: DatasetItem[];
@@ -26,6 +40,25 @@ export function DatasetTable({
     evaluateImages = false,
     onUpdateDatasetItem,
 }: DatasetTableProps) {
+    // State for export dialog
+    const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+    const [exportFilename, setExportFilename] = useState("dataset.json");
+    
+    // Handle dataset export
+    const handleExportDataset = () => {
+        setIsExportDialogOpen(true);
+    };
+    
+    // Handle export confirmation
+    const handleExportConfirm = () => {
+        // Make sure filename has .json extension
+        const filename = exportFilename.endsWith('.json')
+            ? exportFilename
+            : `${exportFilename}.json`;
+        
+        exportDatasetToJson(dataset, filename);
+        setIsExportDialogOpen(false);
+    };
     // Force render of all LinkedIn posts when evaluateImages is true
     useEffect(() => {
         if (evaluateImages) {
@@ -64,7 +97,49 @@ export function DatasetTable({
     };
     return (
         <div>
-            <h2 className="text-xl font-semibold mb-2">Dataset</h2>
+            <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-semibold">Dataset</h2>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportDataset}
+                    className="flex items-center gap-1"
+                >
+                    <Download className="h-4 w-4" />
+                    Export Dataset
+                </Button>
+            </div>
+            
+            {/* Export Dataset Dialog */}
+            <AlertDialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Export Dataset</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Enter a name for your dataset file.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="filename" className="text-right">
+                            Filename
+                        </Label>
+                        <Input
+                            id="filename"
+                            value={exportFilename}
+                            onChange={(e) => setExportFilename(e.target.value)}
+                            placeholder="dataset.json"
+                            className="mt-1"
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleExportConfirm}>
+                            Export
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            
             <Table className="max-w-3xl">
                 <TableHeader>
                     <TableRow>

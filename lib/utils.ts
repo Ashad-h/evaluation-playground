@@ -1,8 +1,32 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { DatasetItem } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
+}
+
+/**
+ * Exports dataset to a JSON file and triggers download
+ * @param dataset The dataset to export
+ * @param filename The name of the file to download
+ */
+export function exportDatasetToJson(dataset: DatasetItem[], filename: string = "dataset.json") {
+    // Create a blob with the dataset JSON
+    const dataStr = JSON.stringify(dataset, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    
+    // Create a download link and trigger the download
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 
 /**
