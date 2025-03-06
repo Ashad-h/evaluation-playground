@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateObject, TextPart, ImagePart, CoreMessage } from "ai";
+import { generateObject, generateText, TextPart, ImagePart, CoreMessage } from "ai";
 import { DatasetItem, FormState, Metrics, outputSchema } from "@/types";
 import { MODELS, ModelKey } from "@/constants";
 import { useLocalStorage } from "./useLocalStorage";
@@ -230,20 +230,46 @@ export function useEvaluation(
                         });
                     }
 
-                    const { object, usage } = await generateObject({
+                    // Step 1: Generate raw text with the main model
+                    const { text: rawOutput, usage: mainModelUsage } = await generateText({
                         model: openai(MODELS[formState.selectedModel].value),
-                        schema: outputSchema,
                         system: systemMessage,
                         messages: [message],
                         abortSignal: controller.signal,
                     });
 
-                    const selectedModel = MODELS[formState.selectedModel];
-                    const requestCost =
-                        (usage.promptTokens * selectedModel.inputPrice) /
-                            1_000_000 +
-                        (usage.completionTokens * selectedModel.outputPrice) /
-                            1_000_000;
+                    // Step 2: Use gpt-4o-mini to parse the raw text into an object
+                    const parsingMessage: CoreMessage = {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: `Parse the following text into a JSON object with 'output' and 'explanation' keys. The output should be a boolean, string, or number as appropriate:\n\n${rawOutput}`
+                            }
+                        ]
+                    };
+
+                    const { object, usage: parsingUsage } = await generateObject({
+                        model: openai(MODELS["openai/gpt-4o-mini"].value),
+                        schema: outputSchema,
+                        system: "You are a helpful assistant that parses text into structured JSON objects.",
+                        messages: [parsingMessage],
+                        abortSignal: controller.signal,
+                    });
+
+                    // Calculate cost for both models
+                    const mainModel = MODELS[formState.selectedModel];
+                    const parsingModel = MODELS["openai/gpt-4o-mini"];
+                    
+                    const mainModelCost =
+                        (mainModelUsage.promptTokens * mainModel.inputPrice) / 1_000_000 +
+                        (mainModelUsage.completionTokens * mainModel.outputPrice) / 1_000_000;
+                    
+                    const parsingCost =
+                        (parsingUsage.promptTokens * parsingModel.inputPrice) / 1_000_000 +
+                        (parsingUsage.completionTokens * parsingModel.outputPrice) / 1_000_000;
+                    
+                    const requestCost = mainModelCost + parsingCost;
                     totalCost += requestCost;
 
                     completedItems++;
