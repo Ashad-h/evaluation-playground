@@ -80,7 +80,7 @@ export function LinkedInPost({
             </div>
             <div className="flex mr-[8px] w-full">
                 <div
-                    className={`text-[14px] font-normal px-[16px] w-full ${
+                    className={`text-[14px] font-normal post-content px-[16px] w-full ${
                         editable ? "cursor-text" : ""
                     }`}
                 >

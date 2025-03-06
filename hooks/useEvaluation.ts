@@ -64,6 +64,14 @@ export function useEvaluation(
 
         console.log(`Capturing LinkedIn post ${index}`, postElement);
 
+        const postContentElement = postElement.querySelector(
+            ".post-content"
+        ) as HTMLElement;
+        if (!postContentElement) {
+            throw new Error(
+                `Post content element with class post-content not found`
+            );
+        }
         try {
             // Make sure the element is visible for capture
             const parentElement = postElement.parentElement;
@@ -81,7 +89,7 @@ export function useEvaluation(
                 // Wait a bit for the styles to apply
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
-                const dataUrl = await toPng(postElement, {
+                const dataUrl = await toPng(postContentElement, {
                     quality: 0.95,
                     pixelRatio: 2,
                 });
@@ -92,7 +100,7 @@ export function useEvaluation(
                 return dataUrl;
             } else {
                 // Fallback if no parent element
-                const dataUrl = await toPng(postElement, {
+                const dataUrl = await toPng(postContentElement, {
                     quality: 0.95,
                     pixelRatio: 2,
                 });
