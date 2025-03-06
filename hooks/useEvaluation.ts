@@ -5,6 +5,7 @@ import { DatasetItem, FormState, Metrics, outputSchema } from "@/types";
 import { MODELS, ModelKey } from "@/constants";
 import { useLocalStorage } from "./useLocalStorage";
 import { toPng } from "html-to-image";
+import { getRenderedLines } from "@/lib/utils";
 
 /**
  * Custom hook for managing the evaluation process
@@ -51,7 +52,9 @@ export function useEvaluation(
      * @param index The index of the post to capture
      * @returns A promise that resolves to the data URL of the captured image
      */
-    const captureLinkedInPost = async (index: number): Promise<string> => {
+    const captureLinkedInPost = async (
+        index: number
+    ): Promise<{ imageDataUrl: string; lines: string[] }> => {
         // Add a small delay to ensure the element is fully rendered
         await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -97,14 +100,20 @@ export function useEvaluation(
                 // Restore original style
                 parentElement.style.cssText = originalStyle;
 
-                return dataUrl;
+                return {
+                    imageDataUrl: dataUrl,
+                    lines: getRenderedLines(postContentElement),
+                };
             } else {
                 // Fallback if no parent element
                 const dataUrl = await toPng(postContentElement, {
                     quality: 0.95,
                     pixelRatio: 2,
                 });
-                return dataUrl;
+                return {
+                    imageDataUrl: dataUrl,
+                    lines: getRenderedLines(postContentElement),
+                };
             }
         } catch (error) {
             console.error("Error capturing LinkedIn post:", error);
@@ -189,12 +198,6 @@ export function useEvaluation(
                         ],
                     };
 
-                    // Always add the text input
-                    (message.content as Array<TextPart>).push({
-                        type: "text",
-                        text: `${item.input}`,
-                    });
-
                     // If evaluating images, also capture and add the LinkedIn post as an image
                     if (formState.evaluateImages) {
                         try {
@@ -205,7 +208,13 @@ export function useEvaluation(
                                 message.content as Array<TextPart | ImagePart>
                             ).push({
                                 type: "image",
-                                image: imageUrl,
+                                image: imageUrl.imageDataUrl,
+                            });
+
+                            // Add the lines to the message
+                            (message.content as Array<TextPart>).push({
+                                type: "text",
+                                text: JSON.stringify(imageUrl.lines, null, 2),
                             });
                         } catch (error) {
                             console.error(
@@ -214,6 +223,11 @@ export function useEvaluation(
                             );
                             // Continue with just the text input if image capture fails
                         }
+                    } else {
+                        (message.content as Array<TextPart>).push({
+                            type: "text",
+                            text: `${item.input}`,
+                        });
                     }
 
                     const { object, usage } = await generateObject({
