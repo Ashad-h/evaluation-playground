@@ -204,12 +204,12 @@ export function useEvaluation(
                             const imageUrl = await captureLinkedInPost(i);
                             console.log(`Captured image for item ${i}`);
                             // Add the image to the message but don't store it in the dataset
-                            (
-                                message.content as Array<TextPart | ImagePart>
-                            ).push({
-                                type: "image",
-                                image: imageUrl.imageDataUrl,
-                            });
+                            // (
+                            //     message.content as Array<TextPart | ImagePart>
+                            // ).push({
+                            //     type: "image",
+                            //     image: imageUrl.imageDataUrl,
+                            // });
 
                             // Add the lines to the message
                             (message.content as Array<TextPart>).push({
