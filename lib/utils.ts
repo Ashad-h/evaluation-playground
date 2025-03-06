@@ -43,7 +43,7 @@ export function getRenderedLines(container: HTMLElement): string[] {
                 continue;
             }
 
-            let lineTop = rects[0].top;
+            const lineTop = rects[0].top;
 
             // Keep extending the range until we move onto a new line
             while (endOffset < text.length) {
