@@ -109,7 +109,7 @@ export function EvaluationForm({
                     htmlFor="evaluate-images"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                    Evaluate LinkedIn post images
+                    Évaluer la forme d'un post LinkedIn
                 </Label>
             </div>
 
