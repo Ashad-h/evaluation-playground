@@ -113,26 +113,51 @@ export function EvaluationForm({
                 </Label>
             </div>
 
-            <div>
-                <Label htmlFor="min-char-count">Minimum Character Count</Label>
-                <Input
-                    id="min-char-count"
-                    type="number"
-                    value={formState.minCharCount?.toString() || "0"}
-                    onChange={(e) =>
-                        setFormState((prev) => ({
-                            ...prev,
-                            minCharCount: parseInt(e.target.value) || 0,
-                        }))
-                    }
-                    placeholder="Enter minimum character count"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                    Posts with fewer characters than this will always be
-                    predicted as &quot;false&quot;. If the value is 0, the post
-                    will be evaluated regardless of the character count.
-                </p>
-            </div>
+            {formState.evaluateImages && (
+                <>
+                    <div>
+                        <Label htmlFor="min-char-count">Minimum Character Count</Label>
+                        <Input
+                            id="min-char-count"
+                            type="number"
+                            value={formState.minCharCount?.toString() || "0"}
+                            onChange={(e) =>
+                                setFormState((prev) => ({
+                                    ...prev,
+                                    minCharCount: parseInt(e.target.value) || 0,
+                                }))
+                            }
+                            placeholder="Enter minimum character count"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Posts with fewer characters than this will always be
+                            predicted as &quot;false&quot;. If the value is 0, the post
+                            will be evaluated regardless of the character count.
+                        </p>
+                    </div>
+
+                    <div>
+                        <Label htmlFor="min-line-count">Minimum Line Count</Label>
+                        <Input
+                            id="min-line-count"
+                            type="number"
+                            value={formState.minLineCount?.toString() || "0"}
+                            onChange={(e) =>
+                                setFormState((prev) => ({
+                                    ...prev,
+                                    minLineCount: parseInt(e.target.value) || 0,
+                                }))
+                            }
+                            placeholder="Enter minimum line count"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Posts with fewer lines than this will always be
+                            predicted as &quot;false&quot;. If the value is 0, the post
+                            will be evaluated regardless of the line count. Lines are counted based on newline characters.
+                        </p>
+                    </div>
+                </>
+            )}
 
             <div className="flex gap-2">
                 <Button onClick={onRunEvaluation} disabled={isEvaluating}>

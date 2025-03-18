@@ -37,4 +37,5 @@ export interface FormState {
     prompt: string;
     evaluateImages: boolean;
     minCharCount: number;
+    minLineCount: number;
 }

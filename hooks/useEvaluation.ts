@@ -23,6 +23,7 @@ export function useEvaluation(
         prompt: "Answer the following question or statement with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number).",
         evaluateImages: false,
         minCharCount: 0,
+        minLineCount: 0,
     });
 
     const [metricsHistory, setMetricsHistory] = useLocalStorage<Metrics[]>(
@@ -161,27 +162,28 @@ export function useEvaluation(
 
             const evaluationPromises = updatedDataset.map(async (item, i) => {
                 try {
-                    // Check if the post meets the minimum character count
-                    if (
-                        formState.minCharCount > 0 &&
-                        item.input.length < formState.minCharCount &&
-                        !formState.evaluateImages
-                    ) {
-                        // If post is too short, automatically set output to false
-                        completedItems++;
-                        setProgress((completedItems / totalItems) * 100);
+                    // Check if the post meets the minimum character count when evaluating images
+                    if (formState.evaluateImages) {
+                        // Check character count
+                        if (formState.minCharCount > 0 && item.input.length < formState.minCharCount) {
+                            // If post is too short, automatically set output to false
+                            completedItems++;
+                            setProgress((completedItems / totalItems) * 100);
 
-                        updatedDataset[i] = {
-                            ...item,
-                            predictedOutput: false,
-                            explanation: `Post is too short (${item.input.length} characters). Minimum required: ${formState.minCharCount} characters.`,
-                        };
+                            updatedDataset[i] = {
+                                ...item,
+                                predictedOutput: false,
+                                explanation: `Post is too short (${item.input.length} characters). Minimum required: ${formState.minCharCount} characters.`,
+                            };
 
-                        return {
-                            predicted: false,
-                            expected: item.expectedOutput,
-                            error: null,
-                        };
+                            return {
+                                predicted: false,
+                                expected: item.expectedOutput,
+                                error: null,
+                            };
+                        }
+                        
+                        // Line count will be checked after capturing the LinkedIn post image
                     }
 
                     // Create the system message
@@ -203,14 +205,30 @@ export function useEvaluation(
                         try {
                             const imageUrl = await captureLinkedInPost(i);
                             console.log(`Captured image for item ${i}`);
-                            // Add the image to the message but don't store it in the dataset
-                            // (
-                            //     message.content as Array<TextPart | ImagePart>
-                            // ).push({
-                            //     type: "image",
-                            //     image: imageUrl.imageDataUrl,
-                            // });
-
+                            
+                            // Check line count using the captured lines
+                            if (formState.minLineCount > 0) {
+                                const lineCount = imageUrl.lines.length;
+                                
+                                if (lineCount < formState.minLineCount) {
+                                    // If post has too few lines, automatically set output to false
+                                    completedItems++;
+                                    setProgress((completedItems / totalItems) * 100);
+    
+                                    updatedDataset[i] = {
+                                        ...item,
+                                        predictedOutput: false,
+                                        explanation: `Post has too few lines (${lineCount} lines). Minimum required: ${formState.minLineCount} lines.`,
+                                    };
+    
+                                    return {
+                                        predicted: false,
+                                        expected: item.expectedOutput,
+                                        error: null,
+                                    };
+                                }
+                            }
+                            
                             // Add the lines to the message
                             (message.content as Array<TextPart>).push({
                                 type: "text",
