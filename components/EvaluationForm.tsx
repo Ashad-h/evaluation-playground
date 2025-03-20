@@ -102,6 +102,7 @@ export function EvaluationForm({
                         setFormState((prev) => ({
                             ...prev,
                             evaluateImages: checked === true,
+                            evaluatePostImage: false,
                         }))
                     }
                 />
@@ -116,7 +117,9 @@ export function EvaluationForm({
             {formState.evaluateImages && (
                 <>
                     <div>
-                        <Label htmlFor="min-char-count">Minimum Character Count</Label>
+                        <Label htmlFor="min-char-count">
+                            Minimum Character Count
+                        </Label>
                         <Input
                             id="min-char-count"
                             type="number"
@@ -131,13 +134,16 @@ export function EvaluationForm({
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             Posts with fewer characters than this will always be
-                            predicted as &quot;false&quot;. If the value is 0, the post
-                            will be evaluated regardless of the character count.
+                            predicted as &quot;false&quot;. If the value is 0,
+                            the post will be evaluated regardless of the
+                            character count.
                         </p>
                     </div>
 
                     <div>
-                        <Label htmlFor="min-line-count">Minimum Line Count</Label>
+                        <Label htmlFor="min-line-count">
+                            Minimum Line Count
+                        </Label>
                         <Input
                             id="min-line-count"
                             type="number"
@@ -152,12 +158,34 @@ export function EvaluationForm({
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             Posts with fewer lines than this will always be
-                            predicted as &quot;false&quot;. If the value is 0, the post
-                            will be evaluated regardless of the line count. Lines are counted based on newline characters.
+                            predicted as &quot;false&quot;. If the value is 0,
+                            the post will be evaluated regardless of the line
+                            count. Lines are counted based on newline
+                            characters.
                         </p>
                     </div>
                 </>
             )}
+
+            <div className="flex items-center space-x-2">
+                <Checkbox
+                    id="evaluate-post-image"
+                    checked={formState.evaluatePostImage}
+                    onCheckedChange={(checked) =>
+                        setFormState((prev) => ({
+                            ...prev,
+                            evaluatePostImage: checked === true,
+                            evaluateImages: false,
+                        }))
+                    }
+                />
+                <Label
+                    htmlFor="evaluate-post-image"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    Évaluer l&apos;image du post LinkedIn
+                </Label>
+            </div>
 
             <div className="flex gap-2">
                 <Button onClick={onRunEvaluation} disabled={isEvaluating}>

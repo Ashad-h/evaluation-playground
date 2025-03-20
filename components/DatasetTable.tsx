@@ -228,7 +228,7 @@ export function DatasetTable({
                                                 <img
                                                     src={item.imageUrl}
                                                     alt="Dataset item image"
-                                                    className="max-w-md max-h-64 object-contain rounded-md border border-gray-200"
+                                                    className="max-w-lg object-contain rounded-md border border-gray-200"
                                                 />
                                             </div>
                                         )}

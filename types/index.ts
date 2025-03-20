@@ -40,4 +40,5 @@ export interface FormState {
     evaluateImages: boolean;
     minCharCount: number;
     minLineCount: number;
+    evaluatePostImage: boolean;
 }

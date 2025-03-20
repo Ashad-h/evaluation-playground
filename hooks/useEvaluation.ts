@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateObject, generateText, TextPart, ImagePart, CoreMessage } from "ai";
+import {
+    generateObject,
+    generateText,
+    TextPart,
+    ImagePart,
+    CoreMessage,
+} from "ai";
 import { DatasetItem, FormState, Metrics, outputSchema } from "@/types";
 import { MODELS, ModelKey } from "@/constants";
 import { useLocalStorage } from "./useLocalStorage";
@@ -22,6 +28,7 @@ export function useEvaluation(
         selectedModel: "gpt-4o-mini" as ModelKey,
         prompt: "Answer the following question or statement with a JSON object containing a single key 'output' with the appropriate value (boolean, string, or number).",
         evaluateImages: false,
+        evaluatePostImage: false,
         minCharCount: 0,
         minLineCount: 0,
     });
@@ -55,7 +62,7 @@ export function useEvaluation(
      */
     const captureLinkedInPost = async (
         index: number
-    ): Promise<{ imageDataUrl: string; lines: string[] }> => {
+    ): Promise<{ lines: string[] }> => {
         // Add a small delay to ensure the element is fully rendered
         await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -93,26 +100,14 @@ export function useEvaluation(
                 // Wait a bit for the styles to apply
                 await new Promise((resolve) => setTimeout(resolve, 100));
 
-                const dataUrl = await toPng(postContentElement, {
-                    quality: 0.95,
-                    pixelRatio: 2,
-                });
-
                 // Restore original style
                 parentElement.style.cssText = originalStyle;
 
                 return {
-                    imageDataUrl: dataUrl,
                     lines: getRenderedLines(postContentElement),
                 };
             } else {
-                // Fallback if no parent element
-                const dataUrl = await toPng(postContentElement, {
-                    quality: 0.95,
-                    pixelRatio: 2,
-                });
                 return {
-                    imageDataUrl: dataUrl,
                     lines: getRenderedLines(postContentElement),
                 };
             }
@@ -165,7 +160,10 @@ export function useEvaluation(
                     // Check if the post meets the minimum character count when evaluating images
                     if (formState.evaluateImages) {
                         // Check character count
-                        if (formState.minCharCount > 0 && item.input.length < formState.minCharCount) {
+                        if (
+                            formState.minCharCount > 0 &&
+                            item.input.length < formState.minCharCount
+                        ) {
                             // If post is too short, automatically set output to false
                             completedItems++;
                             setProgress((completedItems / totalItems) * 100);
@@ -182,7 +180,7 @@ export function useEvaluation(
                                 error: null,
                             };
                         }
-                        
+
                         // Line count will be checked after capturing the LinkedIn post image
                     }
 
@@ -205,22 +203,24 @@ export function useEvaluation(
                         try {
                             const imageUrl = await captureLinkedInPost(i);
                             console.log(`Captured image for item ${i}`);
-                            
+
                             // Check line count using the captured lines
                             if (formState.minLineCount > 0) {
                                 const lineCount = imageUrl.lines.length;
-                                
+
                                 if (lineCount < formState.minLineCount) {
                                     // If post has too few lines, automatically set output to false
                                     completedItems++;
-                                    setProgress((completedItems / totalItems) * 100);
-    
+                                    setProgress(
+                                        (completedItems / totalItems) * 100
+                                    );
+
                                     updatedDataset[i] = {
                                         ...item,
                                         predictedOutput: false,
                                         explanation: `Post has too few lines (${lineCount} lines). Minimum required: ${formState.minLineCount} lines.`,
                                     };
-    
+
                                     return {
                                         predicted: false,
                                         expected: item.expectedOutput,
@@ -228,7 +228,7 @@ export function useEvaluation(
                                     };
                                 }
                             }
-                            
+
                             // Add the lines to the message
                             (message.content as Array<TextPart>).push({
                                 type: "text",
@@ -241,6 +241,12 @@ export function useEvaluation(
                             );
                             // Continue with just the text input if image capture fails
                         }
+                    }
+                    if (formState.evaluatePostImage && item.imageUrl) {
+                        (message.content as Array<ImagePart>).push({
+                            type: "image",
+                            image: item.imageUrl,
+                        });
                     } else {
                         (message.content as Array<TextPart>).push({
                             type: "text",
@@ -249,12 +255,15 @@ export function useEvaluation(
                     }
 
                     // Step 1: Generate raw text with the main model
-                    const { text: rawOutput, usage: mainModelUsage } = await generateText({
-                        model: openai(MODELS[formState.selectedModel].value),
-                        system: systemMessage,
-                        messages: [message],
-                        abortSignal: controller.signal,
-                    });
+                    const { text: rawOutput, usage: mainModelUsage } =
+                        await generateText({
+                            model: openai(
+                                MODELS[formState.selectedModel].value
+                            ),
+                            system: systemMessage,
+                            messages: [message],
+                            abortSignal: controller.signal,
+                        });
 
                     // Step 2: Use gpt-4o-mini to parse the raw text into an object
                     const parsingMessage: CoreMessage = {
@@ -262,31 +271,38 @@ export function useEvaluation(
                         content: [
                             {
                                 type: "text",
-                                text: `Parse the following text into a JSON object with 'output' and 'explanation' keys. The output should be a boolean, string, or number as appropriate:\n\n${rawOutput}`
-                            }
-                        ]
+                                text: `Parse the following text into a JSON object with 'output' and 'explanation' keys. The output should be a boolean, string, or number as appropriate:\n\n${rawOutput}`,
+                            },
+                        ],
                     };
 
-                    const { object, usage: parsingUsage } = await generateObject({
-                        model: openai(MODELS["openai/gpt-4o-mini"].value),
-                        schema: outputSchema,
-                        system: "You are a helpful assistant that parses text into structured JSON objects.",
-                        messages: [parsingMessage],
-                        abortSignal: controller.signal,
-                    });
+                    const { object, usage: parsingUsage } =
+                        await generateObject({
+                            model: openai(MODELS["openai/gpt-4o-mini"].value),
+                            schema: outputSchema,
+                            system: "You are a helpful assistant that parses text into structured JSON objects.",
+                            messages: [parsingMessage],
+                            abortSignal: controller.signal,
+                        });
 
                     // Calculate cost for both models
                     const mainModel = MODELS[formState.selectedModel];
                     const parsingModel = MODELS["openai/gpt-4o-mini"];
-                    
+
                     const mainModelCost =
-                        (mainModelUsage.promptTokens * mainModel.inputPrice) / 1_000_000 +
-                        (mainModelUsage.completionTokens * mainModel.outputPrice) / 1_000_000;
-                    
+                        (mainModelUsage.promptTokens * mainModel.inputPrice) /
+                            1_000_000 +
+                        (mainModelUsage.completionTokens *
+                            mainModel.outputPrice) /
+                            1_000_000;
+
                     const parsingCost =
-                        (parsingUsage.promptTokens * parsingModel.inputPrice) / 1_000_000 +
-                        (parsingUsage.completionTokens * parsingModel.outputPrice) / 1_000_000;
-                    
+                        (parsingUsage.promptTokens * parsingModel.inputPrice) /
+                            1_000_000 +
+                        (parsingUsage.completionTokens *
+                            parsingModel.outputPrice) /
+                            1_000_000;
+
                     const requestCost = mainModelCost + parsingCost;
                     totalCost += requestCost;
 
