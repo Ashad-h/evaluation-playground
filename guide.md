@@ -95,7 +95,7 @@ Le processus d'évaluation vous permet de tester votre modèle d'IA sur votre je
         - **Nombre minimum de lignes**: définit le nombre minimum de lignes qu'un post doit contenir
 
 5. **Évaluation de l'image**
-    - Cochez la case "Évaluer l'image du post LinkedIn" pour analyser les images associées aux posts
+    - Cochez la case "Évaluer l'image du post LinkedIn" pour analyser l’image associée au post
     - Cette option est mutuellement exclusive avec l'évaluation de la forme (vous ne pouvez pas activer les deux en même temps)
     - Lorsque cette option est activée, le modèle recevra l'URL de l'image associée au post pour l'évaluer
 
