@@ -7,8 +7,9 @@ L'importation d'un nouveau jeu de données est une étape essentielle pour comme
 ### Préparation du jeu de données
 
 1. Préparez votre jeu de données au format JSON. Il doit contenir une liste d'objets avec au moins deux champs:
-    - Un champ pour le contenu du post (généralement `input`)
-    - Un champ pour la valeur attendue (généralement `expectedOutput`)
+    - Un champ pour le contenu du post (généralement `input`)
+    - Un champ pour la valeur attendue (généralement `expectedOutput`)
+    - Un champ optionnel pour l'URL de l'image (généralement `imageUrl`)
 
 Exemple de format:
 
@@ -16,21 +17,26 @@ Exemple de format:
 [
   {
     "input": "Contenu du premier post LinkedIn",
-    "expectedOutput": true},
+    "expectedOutput": true,
+    "imageUrl": "https://example.com/image1.jpg"
+  },
   {
     "input": "Contenu du deuxième post LinkedIn",
-    "expectedOutput": false}
+    "expectedOutput": false,
+    "imageUrl": ""
+  }
 ]
 
 ```
 
 ### Processus d'importation
 
-1. Cliquez sur le bouton **Import Dataset** pour ouvrir le panneau d'importation
-2. Dans le champ **JSON Input**, collez votre jeu de données au format JSON
-3. Dans le champ **Input Field Name**, spécifiez le nom du champ contenant le texte du post (par défaut: `input`)
-4. Dans le champ **Output Field Name**, spécifiez le nom du champ contenant la valeur attendue (par défaut: `expectedOutput`)
-5. Cliquez sur le bouton **Import** pour charger le jeu de données
+1. Cliquez sur le bouton **Import Dataset** pour ouvrir le panneau d'importation
+2. Dans le champ **JSON Input**, collez votre jeu de données au format JSON
+3. Dans le champ **Input Field Name**, spécifiez le nom du champ contenant le texte du post (par défaut: `input`)
+4. Dans le champ **Output Field Name**, spécifiez le nom du champ contenant la valeur attendue (par défaut: `expectedOutput`)
+5. Dans le champ **Image URL Field Name**, spécifiez le nom du champ contenant l'URL de l'image (par défaut: `imageUrl`)
+6. Cliquez sur le bouton **Import** pour charger le jeu de données
 
 ## Comment étiqueter les éléments dans le jeu de données
 
@@ -52,6 +58,7 @@ Une fois votre jeu de données importé, vous pouvez visualiser et modifier les 
     - L'indicateur visuel change automatiquement (vert pour `true`, rouge pour `false`)
 2. Lorsque vous développez un élément, vous pouvez également:
     - Voir le post LinkedIn formaté comme il apparaîtrait sur la plateforme
+    - Visualiser l'image associée au post (si une URL d'image est fournie)
     - Visualiser l'explication fournie par le modèle (si disponible)
     - Modifier la valeur attendue dans la section détaillée
 
@@ -86,6 +93,11 @@ Le processus d'évaluation vous permet de tester votre modèle d'IA sur votre je
     - Lorsque cette option est activée, deux champs supplémentaires apparaissent:
         - **Nombre minimum de caractères**: définit le nombre minimum de caractères qu'un post doit contenir
         - **Nombre minimum de lignes**: définit le nombre minimum de lignes qu'un post doit contenir
+
+5. **Évaluation de l'image**
+    - Cochez la case "Évaluer l'image du post LinkedIn" pour analyser les images associées aux posts
+    - Cette option est mutuellement exclusive avec l'évaluation de la forme (vous ne pouvez pas activer les deux en même temps)
+    - Lorsque cette option est activée, le modèle recevra l'URL de l'image associée au post pour l'évaluer
 
 ### Lancement de l'évaluation
 
@@ -201,3 +213,17 @@ Pour améliorer les résultats:
 **Exemple**:
 
 ![image.png](Guide%20de%20la%20playground%20d%E2%80%99e%CC%81valuation%201ba68ed0d2788092954bef6d807d57ee/image.png)
+
+### Image URL Field Name
+
+**Description**: Lors de l'importation d'un jeu de données, ce champ permet de spécifier le nom de la propriété dans votre JSON qui contient l'URL de l'image associée à chaque post LinkedIn.
+**Format**: Chaîne de caractères
+**Obligatoire**: Non (par défaut: "imageUrl")
+**Usage**: Si votre jeu de données contient des images associées aux posts, vous pouvez spécifier le nom du champ qui contient ces URLs. Les images seront affichées dans la vue détaillée de chaque élément du jeu de données.
+
+### Évaluer l'image du post LinkedIn
+
+**Description**: Lorsque cette option est activée, l'évaluation prendra en compte l'image associée au post LinkedIn, en plus de son contenu textuel. L'URL de l'image sera incluse dans le prompt envoyé au modèle d'IA.
+**Format**: Case à cocher
+**Obligatoire**: Non (désactivé par défaut)
+**Usage**: Cette option est mutuellement exclusive avec "Évaluer la forme d'un post LinkedIn". Vous ne pouvez pas activer les deux en même temps. Utilisez cette option lorsque vous souhaitez que le modèle évalue le contenu visuel des posts en plus du texte.
