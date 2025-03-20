@@ -73,8 +73,6 @@ export function useEvaluation(
             );
         }
 
-        console.log(`Capturing LinkedIn post ${index}`, postElement);
-
         const postContentElement = postElement.querySelector(
             ".post-content"
         ) as HTMLElement;
@@ -241,8 +239,7 @@ export function useEvaluation(
                             );
                             // Continue with just the text input if image capture fails
                         }
-                    }
-                    if (formState.evaluatePostImage && item.imageUrl) {
+                    } else if (formState.evaluatePostImage && item.imageUrl) {
                         (message.content as Array<ImagePart>).push({
                             type: "image",
                             image: item.imageUrl,

@@ -21,7 +21,7 @@ export function LinkedInPost({
     previewWidth,
     onChange,
     editable = false,
-    defaultCollapsed = true,
+    defaultCollapsed = false,
 }: LinkedInPostProps) {
     const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
     const postRef = useRef<HTMLDivElement>(null);
