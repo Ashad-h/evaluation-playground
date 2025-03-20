@@ -10,18 +10,15 @@ import { checkLocalStorage } from "@/utils/testLocalStorage";
  * @returns Dataset state and management functions
  */
 export function useDataset() {
-    const [dataset, setDataset] = useDatasetStorage(
-        "dataset",
-        initialDataset
-    );
+    const [dataset, setDataset] = useDatasetStorage("dataset", initialDataset);
     const [jsonInput, setJsonInput] = useState("");
     const [inputField, setInputField] = useState("input");
     const [outputField, setOutputField] = useState("expectedOutput");
+    const [imageUrlField, setImageUrlField] = useState("imageUrl");
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>(
         {}
     );
-
 
     /**
      * Toggles the expansion state of a dataset row
@@ -44,6 +41,7 @@ export function useDataset() {
                 const validatedItem = datasetItemSchema.parse({
                     input: item[inputField],
                     expectedOutput: item[outputField],
+                    imageUrl: item[imageUrlField] || "",
                 });
                 return validatedItem;
             });
@@ -75,6 +73,8 @@ export function useDataset() {
         setInputField,
         outputField,
         setOutputField,
+        imageUrlField,
+        setImageUrlField,
         isImportOpen,
         setIsImportOpen,
         expandedRows,

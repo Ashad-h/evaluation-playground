@@ -56,11 +56,20 @@ export type ModelKey = keyof typeof MODELS;
 
 // Initial dataset for the application
 export const initialDataset = [
-    { input: "Is the capital of France Paris?", expectedOutput: true },
-    { input: "What is 2 + 2?", expectedOutput: 4 },
+    {
+        input: "Is the capital of France Paris?",
+        expectedOutput: true,
+        imageUrl: ""
+    },
+    {
+        input: "What is 2 + 2?",
+        expectedOutput: 4,
+        imageUrl: ""
+    },
     {
         input: "Who wrote Romeo and Juliet?",
         expectedOutput: "William Shakespeare",
+        imageUrl: ""
     },
 ];
 

@@ -16,6 +16,8 @@ interface DatasetImportProps {
     setInputField: (value: string) => void;
     outputField: string;
     setOutputField: (value: string) => void;
+    imageUrlField: string;
+    setImageUrlField: (value: string) => void;
     isImportOpen: boolean;
     setIsImportOpen: (value: boolean) => void;
     onImport: () => void;
@@ -28,6 +30,8 @@ export function DatasetImport({
     setInputField,
     outputField,
     setOutputField,
+    imageUrlField,
+    setImageUrlField,
     isImportOpen,
     setIsImportOpen,
     onImport,
@@ -70,6 +74,15 @@ export function DatasetImport({
                             value={outputField}
                             onChange={(e) => setOutputField(e.target.value)}
                             placeholder="expectedOutput"
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <Label htmlFor="image-url-field">Image URL Field Name</Label>
+                        <Input
+                            id="image-url-field"
+                            value={imageUrlField}
+                            onChange={(e) => setImageUrlField(e.target.value)}
+                            placeholder="imageUrl"
                         />
                     </div>
                 </div>

@@ -1,0 +1,2 @@
+Use bun to run the project.
+Create new ui components with shadcn/ui using bunx shadcn-ui@latest add [component]

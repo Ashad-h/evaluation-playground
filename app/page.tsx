@@ -22,6 +22,8 @@ export default function OpenAIPlayground() {
     setInputField,
     outputField,
     setOutputField,
+    imageUrlField,
+    setImageUrlField,
     isImportOpen,
     setIsImportOpen,
     expandedRows,
@@ -78,6 +80,8 @@ export default function OpenAIPlayground() {
         setInputField={setInputField}
         outputField={outputField}
         setOutputField={setOutputField}
+        imageUrlField={imageUrlField}
+        setImageUrlField={setImageUrlField}
         isImportOpen={isImportOpen}
         setIsImportOpen={setIsImportOpen}
         onImport={handleImportDataset}

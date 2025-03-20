@@ -14,6 +14,7 @@ export interface DatasetItem {
     expectedOutput: OutputType;
     predictedOutput?: OutputType;
     explanation?: string;
+    imageUrl?: string;
 }
 
 export interface Metrics {
@@ -29,6 +30,7 @@ export interface Metrics {
 export const datasetItemSchema = z.object({
     input: z.string(),
     expectedOutput: z.union([z.boolean(), z.string(), z.number()]),
+    imageUrl: z.string().optional(),
 });
 
 export interface FormState {

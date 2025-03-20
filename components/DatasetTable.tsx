@@ -220,6 +220,18 @@ export function DatasetTable({
                                                 </div>
                                             )}
                                         </div>
+                                        {item.imageUrl && (
+                                            <div>
+                                                <h3 className="font-semibold mb-2">
+                                                    Image:
+                                                </h3>
+                                                <img
+                                                    src={item.imageUrl}
+                                                    alt="Dataset item image"
+                                                    className="max-w-md max-h-64 object-contain rounded-md border border-gray-200"
+                                                />
+                                            </div>
+                                        )}
                                         <div>
                                             <h3 className="font-semibold mb-2">
                                                 Expected Output:
