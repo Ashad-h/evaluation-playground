@@ -140,9 +140,33 @@ function BlogArticleItem({ item }: { item: DatasetItem }) {
                     <h2 className="text-xl font-bold mb-3">{article.title}</h2>
                     <div className="flex">
                         <div
-                            className="mx-auto w-[50rem] article-content"
-                            dangerouslySetInnerHTML={{
-                                __html: article.content,
+                            className="mx-auto w-[50rem]"
+                            ref={(node) => {
+                                if (node) {
+                                    // Clear any existing shadow root
+                                    if (node.shadowRoot) {
+                                        while (node.shadowRoot.firstChild) {
+                                            node.shadowRoot.removeChild(
+                                                node.shadowRoot.firstChild
+                                            );
+                                        }
+                                    }
+
+                                    // Create shadow root if it doesn't exist
+                                    const shadowRoot =
+                                        node.shadowRoot ||
+                                        node.attachShadow({ mode: "open" });
+
+                                    // Create container for article content
+                                    const articleContainer =
+                                        document.createElement("div");
+                                    articleContainer.className =
+                                        "article-content";
+                                    articleContainer.innerHTML =
+                                        article.content;
+
+                                    shadowRoot.appendChild(articleContainer);
+                                }
                             }}
                         />
                     </div>
