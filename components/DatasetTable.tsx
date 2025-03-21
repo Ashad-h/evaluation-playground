@@ -1,4 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import {
     Table,
     TableBody,
@@ -109,15 +115,54 @@ function LinkedInItem({
     );
 }
 
-function formatText(input: string): string {
-    return input
-        .replace(/\n+/g, "\n") // Reduce multiple newlines to a single newline
-        .replace(/^\s+|\s+$/gm, "") // Trim spaces at the start and end of each line
-        .replace(/\n{2,}/g, "\n\n"); // Ensure paragraph spacing with exactly two newlines
-}
-
-function BlogArticleItem({ item }: { item: DatasetItem }) {
+function BlogArticleItem({
+    index,
+    item,
+}: {
+    index: number;
+    item: DatasetItem;
+}) {
     const article = item.input;
+    const shadowRootRef = useRef<HTMLDivElement | null>(null);
+
+    // Memoize the shadow DOM content creation to avoid unnecessary re-renders
+    const createShadowContent = useCallback(
+        (node: HTMLDivElement) => {
+            if (!node) return;
+
+            shadowRootRef.current = node;
+
+            // Clear any existing shadow root
+            if (node.shadowRoot) {
+                while (node.shadowRoot.firstChild) {
+                    node.shadowRoot.removeChild(node.shadowRoot.firstChild);
+                }
+            }
+
+            // Create shadow root if it doesn't exist
+            const shadowRoot =
+                node.shadowRoot || node.attachShadow({ mode: "open" });
+
+            // Create container for article content
+            const articleContainer = document.createElement("div");
+            articleContainer.className = "article-content";
+            articleContainer.innerHTML = article.content;
+
+            shadowRoot.appendChild(articleContainer);
+        },
+        [article.content]
+    );
+
+    // Memoize the article content component
+    const ArticleContent = useMemo(() => {
+        return (
+            <div
+                id={`article-content-${index}`}
+                className="mx-auto w-[50rem]"
+                ref={createShadowContent}
+            />
+        );
+    }, [createShadowContent]);
 
     return (
         <div className="flex gap-6">
@@ -138,38 +183,7 @@ function BlogArticleItem({ item }: { item: DatasetItem }) {
                         )}
                     </div>
                     <h2 className="text-xl font-bold mb-3">{article.title}</h2>
-                    <div className="flex">
-                        <div
-                            className="mx-auto w-[50rem]"
-                            ref={(node) => {
-                                if (node) {
-                                    // Clear any existing shadow root
-                                    if (node.shadowRoot) {
-                                        while (node.shadowRoot.firstChild) {
-                                            node.shadowRoot.removeChild(
-                                                node.shadowRoot.firstChild
-                                            );
-                                        }
-                                    }
-
-                                    // Create shadow root if it doesn't exist
-                                    const shadowRoot =
-                                        node.shadowRoot ||
-                                        node.attachShadow({ mode: "open" });
-
-                                    // Create container for article content
-                                    const articleContainer =
-                                        document.createElement("div");
-                                    articleContainer.className =
-                                        "article-content";
-                                    articleContainer.innerHTML =
-                                        article.content;
-
-                                    shadowRoot.appendChild(articleContainer);
-                                }
-                            }}
-                        />
-                    </div>
+                    <div className="flex">{ArticleContent}</div>
                 </div>
             </div>
             {item.explanation && (
@@ -385,7 +399,10 @@ export function DatasetTable({
                             >
                                 <TableCell colSpan={5}>
                                     {typeof item.input === "object" ? (
-                                        <BlogArticleItem item={item} />
+                                        <BlogArticleItem
+                                            index={index}
+                                            item={item}
+                                        />
                                     ) : (
                                         <LinkedInItem
                                             item={item}

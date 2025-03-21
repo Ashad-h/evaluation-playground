@@ -245,9 +245,31 @@ export function useEvaluation(
                             image: item.imageUrl,
                         });
                     } else if (formState.evaluateArticle) {
+                        const articleEl = document
+                            .getElementById(`article-content-${i}`)
+                            ?.shadowRoot?.querySelector(".article-content");
+
+                        if (!articleEl) {
+                            throw new Error(
+                                `Article element with id article-content-${i} not found`
+                            );
+                        }
+
+                        // Clone the element to avoid modifying the original
+                        const clone = articleEl.cloneNode(true) as HTMLElement;
+
+                        // Remove unwanted elements from the clone
+                        clone
+                            .querySelectorAll("style, script, link, meta")
+                            .forEach((el) => el.remove());
+
+                        // Get only the visible human-readable text
+                        const textContent = clone.innerText.trim();
+
+                        console.log(textContent);
                         (message.content as Array<TextPart>).push({
                             type: "text",
-                            text: `Article title: ${item.input.title}\nArticle content: ${item.input.content}`,
+                            text: `Article title: ${item.input.title}\nArticle content: ${textContent}`,
                         });
                     } else {
                         (message.content as Array<TextPart>).push({
