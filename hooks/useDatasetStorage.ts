@@ -11,7 +11,10 @@ import { DatasetItem } from "@/types";
 export function useDatasetStorage(
     key: string,
     initialValue: DatasetItem[]
-): [DatasetItem[], (value: DatasetItem[] | ((val: DatasetItem[]) => DatasetItem[])) => void] {
+): [
+    DatasetItem[],
+    (value: DatasetItem[] | ((val: DatasetItem[]) => DatasetItem[])) => void
+] {
     // State to store our value
     const [storedValue, setStoredValue] = useState<DatasetItem[]>(initialValue);
 
@@ -29,12 +32,15 @@ export function useDatasetStorage(
 
     // Return a wrapped version of useState's setter function that
     // persists the new value to localStorage without imageUrl
-    const setValue = (value: DatasetItem[] | ((val: DatasetItem[]) => DatasetItem[])) => {
+    const setValue = (
+        value: DatasetItem[] | ((val: DatasetItem[]) => DatasetItem[])
+    ) => {
         try {
             // Allow value to be a function so we have the same API as useState
             const valueToStore =
                 value instanceof Function ? value(storedValue) : value;
 
+            console.log(valueToStore);
             // Save state with full data including imageUrl
             setStoredValue(valueToStore);
 

@@ -11,7 +11,7 @@ import {
 
 interface DatasetImportProps {
     jsonInput: string;
-    setJsonInput: (value: string) => void;
+    setJsonInput: (value: any) => void;
     inputField: string;
     setInputField: (value: string) => void;
     outputField: string;

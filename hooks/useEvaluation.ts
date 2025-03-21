@@ -10,7 +10,6 @@ import {
 import { DatasetItem, FormState, Metrics, outputSchema } from "@/types";
 import { MODELS, ModelKey } from "@/constants";
 import { useLocalStorage } from "./useLocalStorage";
-import { toPng } from "html-to-image";
 import { getRenderedLines } from "@/lib/utils";
 
 /**
@@ -31,6 +30,7 @@ export function useEvaluation(
         evaluatePostImage: false,
         minCharCount: 0,
         minLineCount: 0,
+        evaluateArticle: false,
     });
 
     const [metricsHistory, setMetricsHistory] = useLocalStorage<Metrics[]>(
@@ -243,6 +243,11 @@ export function useEvaluation(
                         (message.content as Array<ImagePart>).push({
                             type: "image",
                             image: item.imageUrl,
+                        });
+                    } else if (formState.evaluateArticle) {
+                        (message.content as Array<TextPart>).push({
+                            type: "text",
+                            text: `Article title: ${item.input.title}\nArticle content: ${item.input.content}`,
                         });
                     } else {
                         (message.content as Array<TextPart>).push({

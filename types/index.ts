@@ -10,7 +10,7 @@ export const outputSchema = z.object({
 export type OutputType = z.infer<typeof outputSchema>["output"];
 
 export interface DatasetItem {
-    input: string;
+    input: any;
     expectedOutput: OutputType;
     predictedOutput?: OutputType;
     explanation?: string;
@@ -28,7 +28,7 @@ export interface Metrics {
 
 // Schema for dataset items
 export const datasetItemSchema = z.object({
-    input: z.string(),
+    input: z.any(),
     expectedOutput: z.union([z.boolean(), z.string(), z.number()]),
     imageUrl: z.string().optional(),
 });
@@ -41,4 +41,5 @@ export interface FormState {
     minCharCount: number;
     minLineCount: number;
     evaluatePostImage: boolean;
+    evaluateArticle: boolean;
 }

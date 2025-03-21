@@ -36,6 +36,13 @@ export function EvaluationForm({
     onRunEvaluation,
     onCancel,
 }: EvaluationFormProps) {
+    const mutuallyExclusiveFields = [
+        "evaluateImages",
+        "evaluatePostImage",
+        "evaluateArticle",
+    ];
+
+
     return (
         <div className="space-y-4">
             <div>
@@ -101,8 +108,13 @@ export function EvaluationForm({
                     onCheckedChange={(checked) =>
                         setFormState((prev) => ({
                             ...prev,
+                            ...Object.fromEntries(
+                                mutuallyExclusiveFields.map((field) => [
+                                    field,
+                                    false,
+                                ])
+                            ),
                             evaluateImages: checked === true,
-                            evaluatePostImage: false,
                         }))
                     }
                 />
@@ -174,8 +186,13 @@ export function EvaluationForm({
                     onCheckedChange={(checked) =>
                         setFormState((prev) => ({
                             ...prev,
+                            ...Object.fromEntries(
+                                mutuallyExclusiveFields.map((field) => [
+                                    field,
+                                    false,
+                                ])
+                            ),
                             evaluatePostImage: checked === true,
-                            evaluateImages: false,
                         }))
                     }
                 />
@@ -184,6 +201,31 @@ export function EvaluationForm({
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                     Évaluer l&apos;image du post LinkedIn
+                </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+                <Checkbox
+                    id="evaluate-article"
+                    checked={formState.evaluateArticle}
+                    onCheckedChange={(checked) =>
+                        setFormState((prev) => ({
+                            ...prev,
+                            ...Object.fromEntries(
+                                mutuallyExclusiveFields.map((field) => [
+                                    field,
+                                    false,
+                                ])
+                            ),
+                            evaluateArticle: checked === true,
+                        }))
+                    }
+                />
+                <Label
+                    htmlFor="evaluate-article"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    Évaluer un article
                 </Label>
             </div>
 

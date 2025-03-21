@@ -33,6 +33,133 @@ interface DatasetTableProps {
     onUpdateDatasetItem?: (index: number, updatedItem: DatasetItem) => void;
 }
 
+function LinkedInItem({
+    item,
+    index,
+    renderBooleanValue,
+}: {
+    item: DatasetItem;
+    index: number;
+    renderBooleanValue: (
+        value: boolean,
+        index: number,
+        isExpectedOutput: boolean,
+        inParagraph?: boolean
+    ) => React.ReactNode;
+}) {
+    return (
+        <div className="p-4 bg-gray-50 space-y-4">
+            {item.imageUrl && (
+                <div>
+                    <h3 className="font-semibold mb-2">Image:</h3>
+                    <img
+                        src={item.imageUrl}
+                        alt="Dataset item image"
+                        className="max-w-lg object-contain rounded-md border border-gray-200"
+                    />
+                </div>
+            )}
+
+            <div className="flex gap-4">
+                <div className="w-fit">
+                    <h3 className="font-semibold mb-2">Input:</h3>
+                    <LinkedInPost
+                        editable={true}
+                        content={item.input}
+                        previewWidth="w-[350px]"
+                    />
+                </div>
+                {item.explanation && (
+                    <div className="max-w-md">
+                        <h3 className="font-semibold mb-2">Explanation:</h3>
+                        <p className="text-gray-700 bg-white p-3 rounded-md">
+                            {item.explanation}
+                        </p>
+                    </div>
+                )}
+            </div>
+            <div>
+                <h3 className="font-semibold mb-2">Expected Output:</h3>
+                <p>
+                    {typeof item.expectedOutput === "boolean"
+                        ? renderBooleanValue(
+                              item.expectedOutput,
+                              index,
+                              true,
+                              true
+                          )
+                        : String(item.expectedOutput)}
+                </p>
+            </div>
+            <div>
+                <h3 className="font-semibold mb-2">Predicted Output:</h3>
+                <p
+                    className={
+                        item.predictedOutput === item.expectedOutput
+                            ? "text-green-600"
+                            : "text-red-600"
+                    }
+                >
+                    {item.predictedOutput !== undefined
+                        ? String(item.predictedOutput)
+                        : "N/A"}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+function formatText(input: string): string {
+    return input
+        .replace(/\n+/g, "\n") // Reduce multiple newlines to a single newline
+        .replace(/^\s+|\s+$/gm, "") // Trim spaces at the start and end of each line
+        .replace(/\n{2,}/g, "\n\n"); // Ensure paragraph spacing with exactly two newlines
+}
+
+function BlogArticleItem({ item }: { item: DatasetItem }) {
+    const article = item.input;
+
+    return (
+        <div className="flex gap-6">
+            <div className="w-full">
+                <h3 className="font-semibold mb-2">Blog Article:</h3>
+                <div className="bg-white shadow-sm rounded-md border border-gray-200 p-4">
+                    <div className="text-sm text-gray-500 mb-1 flex justify-between">
+                        <span>{article.source_name}</span>
+                        {article.url && (
+                            <a
+                                href={article.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-500 hover:underline"
+                            >
+                                View Original
+                            </a>
+                        )}
+                    </div>
+                    <h2 className="text-xl font-bold mb-3">{article.title}</h2>
+                    <div className="flex">
+                        <div
+                            className="mx-auto w-[50rem] article-content"
+                            dangerouslySetInnerHTML={{
+                                __html: article.content,
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+            {item.explanation && (
+                <div className="max-w-md">
+                    <h3 className="font-semibold mb-2">Explanation:</h3>
+                    <p className="text-gray-700 bg-white p-3 rounded-md border border-gray-200 shadow-sm">
+                        {item.explanation}
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export function DatasetTable({
     dataset,
     expandedRows,
@@ -116,6 +243,7 @@ export function DatasetTable({
         }
         return String(value);
     };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-2">
@@ -164,7 +292,7 @@ export function DatasetTable({
                 </AlertDialogContent>
             </AlertDialog>
 
-            <Table className="max-w-3xl">
+            <Table className="">
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[50px]"></TableHead>
@@ -192,11 +320,18 @@ export function DatasetTable({
                                     {index + 1}
                                 </TableCell>
                                 <TableCell>
-                                    {item.input.length > 50
+                                    {typeof item.input === "object"
+                                        ? `${item.input.title.slice(0, 50)}${
+                                              item.input.title.length > 50
+                                                  ? "..."
+                                                  : ""
+                                          }`
+                                        : typeof item.input === "string" &&
+                                          item.input.length > 50
                                         ? `${item.input
                                               .split("\n")[0]
                                               .slice(0, 50)}...`
-                                        : item.input}
+                                        : String(item.input)}
                                 </TableCell>
                                 <TableCell>
                                     {typeof item.expectedOutput === "boolean"
@@ -220,86 +355,22 @@ export function DatasetTable({
                                         : "N/A"}
                                 </TableCell>
                             </TableRow>
-                            {/* Always render the LinkedIn post but keep it hidden when not expanded */}
+                            {/* Expanded row content */}
                             <TableRow
                                 className={expandedRows[index] ? "" : "hidden"}
                             >
                                 <TableCell colSpan={5}>
-                                    <div className="p-4 bg-gray-50 space-y-4">
-                                        {item.imageUrl && (
-                                            <div>
-                                                <h3 className="font-semibold mb-2">
-                                                    Image:
-                                                </h3>
-                                                <img
-                                                    src={item.imageUrl}
-                                                    alt="Dataset item image"
-                                                    className="max-w-lg object-contain rounded-md border border-gray-200"
-                                                />
-                                            </div>
-                                        )}
-
-                                        <div className="flex gap-4">
-                                            <div className="w-fit">
-                                                <h3 className="font-semibold mb-2">
-                                                    Input:
-                                                </h3>
-                                                <LinkedInPost
-                                                    editable={true}
-                                                    content={item.input}
-                                                    previewWidth="w-[350px]"
-                                                />
-                                            </div>
-                                            {item.explanation && (
-                                                <div className="max-w-md">
-                                                    <h3 className="font-semibold mb-2">
-                                                        Explanation:
-                                                    </h3>
-                                                    <p className="text-gray-700 bg-white p-3 rounded-md">
-                                                        {item.explanation}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold mb-2">
-                                                Expected Output:
-                                            </h3>
-                                            <p>
-                                                {typeof item.expectedOutput ===
-                                                "boolean"
-                                                    ? renderBooleanValue(
-                                                          item.expectedOutput,
-                                                          index,
-                                                          true,
-                                                          true
-                                                      )
-                                                    : String(
-                                                          item.expectedOutput
-                                                      )}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold mb-2">
-                                                Predicted Output:
-                                            </h3>
-                                            <p
-                                                className={
-                                                    item.predictedOutput ===
-                                                    item.expectedOutput
-                                                        ? "text-green-600"
-                                                        : "text-red-600"
-                                                }
-                                            >
-                                                {item.predictedOutput !==
-                                                undefined
-                                                    ? String(
-                                                          item.predictedOutput
-                                                      )
-                                                    : "N/A"}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    {typeof item.input === "object" ? (
+                                        <BlogArticleItem item={item} />
+                                    ) : (
+                                        <LinkedInItem
+                                            item={item}
+                                            index={index}
+                                            renderBooleanValue={
+                                                renderBooleanValue
+                                            }
+                                        />
+                                    )}
                                 </TableCell>
                             </TableRow>
                             {/* LinkedIn post for image capture - visually hidden but still rendered */}
@@ -315,10 +386,12 @@ export function DatasetTable({
                                         }}
                                     >
                                         <div id={`linkedin-post-${index}`}>
-                                            <LinkedInPost
-                                                content={item.input}
-                                                previewWidth="w-[350px]"
-                                            />
+                                            {typeof item.input === "string" && (
+                                                <LinkedInPost
+                                                    content={item.input}
+                                                    previewWidth="w-[350px]"
+                                                />
+                                            )}
                                         </div>
                                     </div>
                                 </TableCell>

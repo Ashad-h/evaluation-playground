@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { z } from "zod";
-import { DatasetItem, datasetItemSchema } from "@/types";
+import { datasetItemSchema } from "@/types";
 import { initialDataset } from "@/constants";
 import { useDatasetStorage } from "./useDatasetStorage";
-import { checkLocalStorage } from "@/utils/testLocalStorage";
 
 /**
  * Custom hook for managing the dataset
@@ -46,6 +45,8 @@ export function useDataset() {
                 return validatedItem;
             });
 
+
+            // @ts-ignore
             setDataset(newDataset);
             setJsonInput("");
             setIsImportOpen(false);
