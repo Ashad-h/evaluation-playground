@@ -29,7 +29,7 @@ export interface Metrics {
 // Schema for dataset items
 export const datasetItemSchema = z.object({
     input: z.any(),
-    expectedOutput: z.union([z.boolean(), z.string(), z.number()]),
+    expectedOutput: z.union([z.boolean(), z.string(), z.number()]).optional(),
     imageUrl: z.string().optional(),
 });
 
@@ -42,4 +42,5 @@ export interface FormState {
     minLineCount: number;
     evaluatePostImage: boolean;
     evaluateArticle: boolean;
+    evaluateLinkedInMessage: boolean;
 }

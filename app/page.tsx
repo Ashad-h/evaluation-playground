@@ -93,10 +93,20 @@ export default function OpenAIPlayground() {
         expandedRows={expandedRows}
         onToggleRow={toggleRowExpansion}
         evaluateImages={formState.evaluateImages}
+        evaluateLinkedInMessage={formState.evaluateLinkedInMessage}
+        openaiKey={formState.openaiKey}
+        selectedModel={formState.selectedModel}
+        prompt={formState.prompt}
         onUpdateDatasetItem={(index, updatedItem) => {
           const newDataset = [...dataset];
           newDataset[index] = updatedItem;
           setDataset(newDataset);
+        }}
+        onPromptChange={(newPrompt) => {
+          setFormState((prev) => ({
+            ...prev,
+            prompt: newPrompt,
+          }));
         }}
       />
     </div>

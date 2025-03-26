@@ -31,6 +31,7 @@ export function useEvaluation(
         minCharCount: 0,
         minLineCount: 0,
         evaluateArticle: false,
+        evaluateLinkedInMessage: false,
     });
 
     const [metricsHistory, setMetricsHistory] = useLocalStorage<Metrics[]>(

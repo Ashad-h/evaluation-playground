@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronRight, Check, X, Download } from "lucide-react";
 import { DatasetItem } from "@/types";
 import { LinkedInPost } from "@/components/LinkedInPost";
+import { LinkedInMessageItem } from "@/components/LinkedInMessageItem";
 import { exportDatasetToJson } from "@/lib/utils";
 import {
     AlertDialog,
@@ -36,7 +37,12 @@ interface DatasetTableProps {
     expandedRows: Record<number, boolean>;
     onToggleRow: (index: number) => void;
     evaluateImages: boolean;
+    evaluateLinkedInMessage?: boolean;
+    openaiKey?: string;
+    selectedModel?: string;
+    prompt?: string;
     onUpdateDatasetItem?: (index: number, updatedItem: DatasetItem) => void;
+    onPromptChange?: (prompt: string) => void;
 }
 
 function LinkedInItem({
@@ -203,7 +209,12 @@ export function DatasetTable({
     expandedRows,
     onToggleRow,
     evaluateImages = false,
+    evaluateLinkedInMessage = false,
+    openaiKey = "",
+    selectedModel = "",
+    prompt = "",
     onUpdateDatasetItem,
+    onPromptChange,
 }: DatasetTableProps) {
     // State for export dialog
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
@@ -372,13 +383,16 @@ export function DatasetTable({
                                         : String(item.input)}
                                 </TableCell>
                                 <TableCell>
-                                    {typeof item.expectedOutput === "boolean"
+                                    {typeof item.expectedOutput === "boolean" &&
+                                    !evaluateLinkedInMessage
                                         ? renderBooleanValue(
                                               item.expectedOutput,
                                               index,
                                               true
                                           )
-                                        : String(item.expectedOutput)}
+                                        : item.expectedOutput
+                                        ? String(item.expectedOutput)
+                                        : "N/A"}
                                 </TableCell>
                                 <TableCell
                                     className={
@@ -388,7 +402,8 @@ export function DatasetTable({
                                             : "text-red-600"
                                     }
                                 >
-                                    {item.predictedOutput !== undefined
+                                    {item.predictedOutput !== undefined &&
+                                    !evaluateLinkedInMessage
                                         ? String(item.predictedOutput)
                                         : "N/A"}
                                 </TableCell>
@@ -398,7 +413,21 @@ export function DatasetTable({
                                 className={expandedRows[index] ? "" : "hidden"}
                             >
                                 <TableCell colSpan={5}>
-                                    {typeof item.input === "object" ? (
+                                    {evaluateLinkedInMessage &&
+                                    typeof item.input === "object" ? (
+                                        <LinkedInMessageItem
+                                            item={item}
+                                            index={index}
+                                            apiKey={openaiKey}
+                                            model={selectedModel}
+                                            prompt={prompt}
+                                            onUpdateDatasetItem={
+                                                onUpdateDatasetItem
+                                            }
+                                            onPromptChange={onPromptChange}
+                                        />
+                                    ) : typeof item.input === "object" &&
+                                      !evaluateLinkedInMessage ? (
                                         <BlogArticleItem
                                             index={index}
                                             item={item}

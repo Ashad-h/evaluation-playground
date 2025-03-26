@@ -51,6 +51,25 @@ Exemple de format pour les articles:
 ]
 ```
 
+Exemple de format pour la génération de messages LinkedIn:
+
+```json
+[
+  {
+    "input": {
+      "name": "Mehdi Kheredine",
+      "profileUrl": "https://www.linkedin.com/in/mehdi-kheredine",
+      "title": "Fondateur & CEO Legibus - 📈 #legaltech 💻 #startup #law #Businesslaw #AI 🌱",
+      "role": "Fondateur & CEO",
+      "score": 5,
+      "summary": "Mehdi Kheredine est le fondateur et CEO de Legibus, une plateforme innovante de recherche juridique alimentée par l'IA...",
+      "caseStudy": "Études de cas pertinentes pour Legibus..."
+    },
+    "expectedOutput": true
+  }
+]
+```
+
 ### Processus d'importation
 
 1. Cliquez sur le bouton **Import Dataset** pour ouvrir le panneau d'importation
@@ -125,6 +144,18 @@ Le processus d'évaluation vous permet de tester votre modèle d'IA sur votre je
     - Cochez la case "Évaluer un article" pour analyser des articles au lieu de posts LinkedIn
     - Cette option est mutuellement exclusive avec l'évaluation de la forme et l'évaluation d'image
     - Lorsque cette option est activée, le modèle recevra le titre et le contenu de l'article pour l'évaluer
+
+7. **Évaluation de la génération de messages LinkedIn**
+    - Cochez la case "Évaluer la génération de messages LinkedIn" pour générer des messages personnalisés pour des profils LinkedIn
+    - Cette option est mutuellement exclusive avec les autres modes d'évaluation
+    - Contrairement aux autres modes, les messages ne sont pas générés en masse mais individuellement via un bouton "Generate Message" pour chaque élément
+    - L'évaluation est qualitative, sans calcul de métriques
+
+7. **Évaluation de la génération de messages LinkedIn**
+    - Cochez la case "Évaluer la génération de messages LinkedIn" pour générer des messages personnalisés pour des profils LinkedIn
+    - Cette option est mutuellement exclusive avec les autres modes d'évaluation
+    - Contrairement aux autres modes, les messages ne sont pas générés en masse mais individuellement via un bouton "Generate Message" pour chaque élément
+    - L'évaluation est qualitative, sans calcul de métriques
 
 ### Lancement de l'évaluation
 
@@ -261,3 +292,10 @@ Pour améliorer les résultats:
 **Format**: Case à cocher
 **Obligatoire**: Non (désactivé par défaut)
 **Usage**: Cette option est mutuellement exclusive avec "Évaluer la forme d'un post LinkedIn" et "Évaluer l'image du post LinkedIn". Utilisez cette option lorsque vous souhaitez analyser des articles complets plutôt que des posts LinkedIn.
+
+### Évaluer la génération de messages LinkedIn
+
+**Description**: Lorsque cette option est activée, vous pourrez générer des messages personnalisés pour des profils LinkedIn. Contrairement aux autres modes d'évaluation, les messages ne sont pas générés en masse mais individuellement via un bouton "Generate Message" pour chaque élément du jeu de données.
+**Format**: Case à cocher
+**Obligatoire**: Non (désactivé par défaut)
+**Usage**: Cette option est mutuellement exclusive avec les autres modes d'évaluation. Elle est conçue pour évaluer qualitativement la génération de messages personnalisés pour des profils LinkedIn, sans calcul de métriques. Le jeu de données doit contenir des informations détaillées sur les profils LinkedIn (nom, titre, rôle, résumé, etc.).

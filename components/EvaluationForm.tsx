@@ -40,6 +40,7 @@ export function EvaluationForm({
         "evaluateImages",
         "evaluatePostImage",
         "evaluateArticle",
+        "evaluateLinkedInMessage",
     ];
 
 
@@ -229,8 +230,36 @@ export function EvaluationForm({
                 </Label>
             </div>
 
+            <div className="flex items-center space-x-2">
+                <Checkbox
+                    id="evaluate-linkedin-message"
+                    checked={formState.evaluateLinkedInMessage}
+                    onCheckedChange={(checked) =>
+                        setFormState((prev) => ({
+                            ...prev,
+                            ...Object.fromEntries(
+                                mutuallyExclusiveFields.map((field) => [
+                                    field,
+                                    false,
+                                ])
+                            ),
+                            evaluateLinkedInMessage: checked === true,
+                        }))
+                    }
+                />
+                <Label
+                    htmlFor="evaluate-linkedin-message"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    Évaluer la génération de messages LinkedIn
+                </Label>
+            </div>
+
             <div className="flex gap-2">
-                <Button onClick={onRunEvaluation} disabled={isEvaluating}>
+                <Button
+                    onClick={onRunEvaluation}
+                    disabled={isEvaluating || formState.evaluateLinkedInMessage}
+                >
                     {isEvaluating ? "Evaluating..." : "Run Evaluation"}
                 </Button>
                 {isEvaluating && (
