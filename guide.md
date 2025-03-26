@@ -1,4 +1,4 @@
-# Guide de la playground d’évaluation
+# Guide de la playground d'évaluation
 
 ## Comment importer un nouveau jeu de données
 
@@ -11,7 +11,9 @@ L'importation d'un nouveau jeu de données est une étape essentielle pour comme
     - Un champ pour la valeur attendue (généralement `expectedOutput`)
     - Un champ optionnel pour l'URL de l'image (généralement `imageUrl`)
 
-Exemple de format:
+Pour les articles, le champ `input` doit être un objet contenant au moins un champ `title` pour le titre de l'article.
+
+Exemple de format pour les posts LinkedIn:
 
 ```json
 [
@@ -26,7 +28,27 @@ Exemple de format:
     "imageUrl": ""
   }
 ]
+```
 
+Exemple de format pour les articles:
+
+```json
+[
+  {
+    "input": {
+      "title": "Titre du premier article",
+      "content": "Contenu de l'article..."
+    },
+    "expectedOutput": true
+  },
+  {
+    "input": {
+      "title": "Titre du deuxième article",
+      "content": "Contenu de l'article..."
+    },
+    "expectedOutput": false
+  }
+]
 ```
 
 ### Processus d'importation
@@ -55,7 +77,7 @@ Une fois votre jeu de données importé, vous pouvez visualiser et modifier les 
 
 1. Dans la colonne **Expected Output**, vous pouvez modifier la valeur attendue en cliquant dessus
     - Pour les valeurs booléennes (true/false), un simple clic inverse la valeur
-    - L'indicateur visuel change automatiquement (vert pour `true`, rouge pour `false`)
+    - L'indicateur visuel change automatiquement (vert pour `true`, rouge pour `false`)
 2. Lorsque vous développez un élément, vous pouvez également:
     - Voir le post LinkedIn formaté comme il apparaîtrait sur la plateforme
     - Visualiser l'image associée au post (si une URL d'image est fournie)
@@ -64,9 +86,9 @@ Une fois votre jeu de données importé, vous pouvez visualiser et modifier les 
 
 ### Exportation du jeu de données
 
-1. À tout moment, vous pouvez exporter votre jeu de données en cliquant sur le bouton **Export Dataset**
-2. Spécifiez un nom de fichier (par défaut: `dataset.json`)
-3. Cliquez sur **Export** pour télécharger le fichier JSON contenant votre jeu de données avec toutes les modifications apportées
+1. À tout moment, vous pouvez exporter votre jeu de données en cliquant sur le bouton **Export Dataset**
+2. Spécifiez un nom de fichier (par défaut: `dataset.json`)
+3. Cliquez sur **Export** pour télécharger le fichier JSON contenant votre jeu de données avec toutes les modifications apportées
 
 Cette fonctionnalité est particulièrement utile pour sauvegarder votre travail d'étiquetage ou pour partager votre jeu de données avec d'autres utilisateurs.
 
@@ -95,18 +117,23 @@ Le processus d'évaluation vous permet de tester votre modèle d'IA sur votre je
         - **Nombre minimum de lignes**: définit le nombre minimum de lignes qu'un post doit contenir
 
 5. **Évaluation de l'image**
-    - Cochez la case "Évaluer l'image du post LinkedIn" pour analyser l’image associée au post
-    - Cette option est mutuellement exclusive avec l'évaluation de la forme (vous ne pouvez pas activer les deux en même temps)
+    - Cochez la case "Évaluer l'image du post LinkedIn" pour analyser l'image associée au post
+    - Cette option est mutuellement exclusive avec l'évaluation de la forme et l'évaluation d'article
     - Lorsque cette option est activée, le modèle recevra l'URL de l'image associée au post pour l'évaluer
+
+6. **Évaluation d'article**
+    - Cochez la case "Évaluer un article" pour analyser des articles au lieu de posts LinkedIn
+    - Cette option est mutuellement exclusive avec l'évaluation de la forme et l'évaluation d'image
+    - Lorsque cette option est activée, le modèle recevra le titre et le contenu de l'article pour l'évaluer
 
 ### Lancement de l'évaluation
 
-1. Cliquez sur le bouton **Run Evaluation** pour lancer le processus
+1. Cliquez sur le bouton **Run Evaluation** pour lancer le processus
 2. Durant l'évaluation:
     - Une barre de progression indique l'avancement en pourcentage
     - Le temps écoulé est affiché
-    - Vous pouvez annuler l'évaluation à tout moment en cliquant sur le bouton **Cancel**
-
+    - Vous pouvez annuler l'évaluation à tout moment en cliquant sur le bouton **Cancel**
+ 
 ## Interprétation des résultats
 
 Après l'évaluation, les résultats sont présentés de plusieurs façons:
@@ -151,9 +178,9 @@ L'historique des métriques vous permet de comparer les performances de différe
     - Vous pouvez voir l'évolution de vos résultats au fil du temps
 2. **Réutilisation des prompts**
     - Pour chaque évaluation, vous pouvez voir le prompt utilisé en cliquant sur l'icône de flèche
-    - Le bouton **Use This Prompt** vous permet de réutiliser un prompt précédent
+    - Le bouton **Use This Prompt** vous permet de réutiliser un prompt précédent
 3. **Gestion de l'historique**
-    - Le bouton **Reset History** permet de réinitialiser l'historique des métriques
+    - Le bouton **Reset History** permet de réinitialiser l'historique des métriques
     - Cette action est irréversible et supprimera toutes les données d'évaluation précédentes
 
 ## Optimisation des évaluations
@@ -226,4 +253,11 @@ Pour améliorer les résultats:
 **Description**: Lorsque cette option est activée, l'évaluation prendra en compte l'image associée au post LinkedIn, en plus de son contenu textuel. L'URL de l'image sera incluse dans le prompt envoyé au modèle d'IA.
 **Format**: Case à cocher
 **Obligatoire**: Non (désactivé par défaut)
-**Usage**: Cette option est mutuellement exclusive avec "Évaluer la forme d'un post LinkedIn". Vous ne pouvez pas activer les deux en même temps. Utilisez cette option lorsque vous souhaitez que le modèle évalue le contenu visuel des posts en plus du texte.
+**Usage**: Cette option est mutuellement exclusive avec "Évaluer la forme d'un post LinkedIn" et "Évaluer un article". Vous ne pouvez pas activer plusieurs options en même temps. Utilisez cette option lorsque vous souhaitez que le modèle évalue le contenu visuel des posts en plus du texte.
+
+### Évaluer un article
+
+**Description**: Lorsque cette option est activée, l'évaluation prendra en compte le contenu d'un article complet au lieu d'un post LinkedIn. Le titre et le contenu de l'article seront inclus dans le prompt envoyé au modèle d'IA.
+**Format**: Case à cocher
+**Obligatoire**: Non (désactivé par défaut)
+**Usage**: Cette option est mutuellement exclusive avec "Évaluer la forme d'un post LinkedIn" et "Évaluer l'image du post LinkedIn". Utilisez cette option lorsque vous souhaitez analyser des articles complets plutôt que des posts LinkedIn.
