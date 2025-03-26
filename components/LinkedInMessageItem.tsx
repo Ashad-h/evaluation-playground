@@ -170,7 +170,7 @@ Résumé du profil: ${profileData.summary.trim()}
                             </div>
                         ) : (
                             <div className="text-gray-500 italic">
-                                Click "Generate Message" to create a
+                                Click &quot;Generate Message&quot; to create a
                                 personalized outreach message
                             </div>
                         )}
