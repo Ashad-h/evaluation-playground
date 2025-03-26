@@ -50,8 +50,8 @@ export function LinkedInMessageItem({
 Nom: ${profileData.name}
 Titre: ${profileData.title}
 Rôle: ${profileData.role}
-Résumé du profil: ${profileData.summary.trim()}
-Études de cas: ${profileData.caseStudy.trim()}`;
+Résumé du profil: ${profileData.summary?.trim()}
+Études de cas: ${profileData.caseStudy?.trim()}`;
 
             const { text: message, usage } = await generateText({
                 model: openai(model),
@@ -132,7 +132,9 @@ Résumé du profil: ${profileData.summary.trim()}
                         <textarea
                             className="w-full min-h-[100px] p-2 border border-gray-300 rounded-md"
                             value={prompt}
-                            onChange={(e) => onPromptChange && onPromptChange(e.target.value)}
+                            onChange={(e) =>
+                                onPromptChange && onPromptChange(e.target.value)
+                            }
                             placeholder="Enter your prompt here"
                         />
                     </div>
@@ -144,7 +146,7 @@ Résumé du profil: ${profileData.summary.trim()}
                             Case Study
                         </h3>
                         <div className="whitespace-pre-line">
-                            {profileData.caseStudy.trim()}
+                            {profileData.caseStudy?.trim()}
                         </div>
                     </div>
 
