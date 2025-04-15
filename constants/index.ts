@@ -77,6 +77,13 @@ export const MODELS = {
         inputPrice: 75, // per 1M tokens ($0.50 per 1M)
         outputPrice: 150, // per 1M tokens ($2.00 per 1M)
     },
+    "openai/gpt-4.1": {
+        value: "openai/gpt-4.1",
+        name: "GPT-4.1",
+        reasoningEffort: null,
+        inputPrice: 2, // per 1M tokens ($2.00 per 1M)
+        outputPrice: 8, // per 1M tokens ($8.00 per 1M)
+    },
 } as const;
 
 // Type for model keys
