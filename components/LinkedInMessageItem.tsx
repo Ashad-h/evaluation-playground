@@ -46,6 +46,36 @@ export function LinkedInMessageItem({
     profileData?.signal ?? "like",
   );
 
+  const formatExperience = (exp: Record<string, string | null>) => {
+    const parts: string[] = [];
+    if (exp.title) {
+      parts.push(`Poste: ${exp.title}`);
+    }
+    if (exp.company) {
+      parts.push(`Entreprise: ${exp.company}`);
+    }
+    if (exp.contractType) {
+      parts.push(`Contrat: ${exp.contractType}`);
+    }
+    if (exp.companyLocation) {
+      parts.push(`Localisation: ${exp.companyLocation}`);
+    }
+    if (exp.duration) {
+      parts.push(`Durée: ${exp.duration}`);
+    } else {
+      const dates = [exp.startDate, exp.endDate]
+        .filter(Boolean)
+        .map((date, idx) => (idx === 0 ? `Début: ${date}` : `Fin: ${date}`));
+      if (dates.length) {
+        parts.push(dates.join(" - "));
+      }
+    }
+    if (exp.description) {
+      parts.push(`Description: ${exp.description}`);
+    }
+    return parts.join("\n");
+  };
+
   useEffect(() => {
     setIncludeCaseStudy(profileData?.includeCaseStudy !== false);
   }, [profileData?.includeCaseStudy]);
@@ -91,9 +121,22 @@ export function LinkedInMessageItem({
         baseURL: "https://openrouter.ai/api/v1",
       });
 
+      const caseStudyContent = profileData.caseStudy?.trim();
       const caseStudySection =
-        includeCaseStudy && profileData.caseStudy
-          ? `Études de cas: ${profileData.caseStudy.trim()}`
+        includeCaseStudy && caseStudyContent
+          ? `Études de cas: ${caseStudyContent}`
+          : includeCaseStudy && !caseStudyContent
+            ? ""
+            : "";
+
+      const experienceSection =
+        Array.isArray(profileData.experience) &&
+        profileData.experience.length > 0
+          ? `Expériences:\n${profileData.experience
+              .map((exp: Record<string, string | null>) =>
+                formatExperience(exp),
+              )
+              .join("\n\n")}`
           : "";
 
       const userPrompt = `${prompt}
@@ -102,6 +145,7 @@ Nom: ${profileData.name}
 Titre: ${profileData.title}
 Rôle: ${profileData.role}
 Résumé du profil: ${profileData.summary?.trim()}
+${experienceSection}
 ${caseStudySection}
 Signal LinkedIn: ${selectedSignal}`;
 
@@ -173,41 +217,58 @@ Signal LinkedIn: ${selectedSignal}`;
             <p className="whitespace-pre-line">{profileData.summary}</p>
           </div>
 
-          <div className="bg-white p-4 rounded-md border border-gray-200 shadow-sm">
-            <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-center sm:justify-between">
-              <Label className="flex items-center gap-2 text-sm font-medium">
-                <Checkbox
-                  checked={includeCaseStudy}
-                  onCheckedChange={handleIncludeCaseStudyChange}
-                />
-                Include case study in prompt
-              </Label>
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium">Signal</Label>
-                <Select
-                  value={selectedSignal}
-                  onValueChange={handleSignalChange}
-                >
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="like">like</SelectItem>
-                    <SelectItem value="comment">comment</SelectItem>
-                    <SelectItem value="invitation">invitation</SelectItem>
-                    <SelectItem value="repost">repost</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          {Array.isArray(profileData.experience) && (
+            <div className="bg-white p-4 rounded-md border border-gray-200 shadow-sm">
+              <h3 className="font-semibold text-lg mb-2">Experience</h3>
+              {profileData.experience.length > 0 ? (
+                <div className="space-y-4">
+                  {profileData.experience.map(
+                    (exp: Record<string, string | null>, expIndex: number) => (
+                      <div
+                        key={`${exp.title}-${expIndex}`}
+                        className="border border-gray-100 rounded-md p-3 space-y-1"
+                      >
+                        <p className="font-semibold">
+                          {exp.title}{" "}
+                          {exp.company && (
+                            <span className="text-gray-600 font-normal">
+                              @ {exp.company}
+                            </span>
+                          )}
+                        </p>
+                        {(exp.duration || exp.startDate || exp.endDate) && (
+                          <p className="text-sm text-gray-600">
+                            {exp.duration
+                              ? exp.duration
+                              : [exp.startDate, exp.endDate]
+                                  .filter(Boolean)
+                                  .join(" - ")}
+                          </p>
+                        )}
+                        {exp.companyLocation && (
+                          <p className="text-sm text-gray-600">
+                            {exp.companyLocation}
+                          </p>
+                        )}
+                        {exp.contractType && (
+                          <p className="text-xs uppercase tracking-wide text-gray-500">
+                            {exp.contractType}
+                          </p>
+                        )}
+                        {exp.description && (
+                          <p className="text-sm whitespace-pre-line text-gray-700">
+                            {exp.description}
+                          </p>
+                        )}
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No experience provided.</p>
+              )}
             </div>
-            <h3 className="font-semibold text-lg mb-2">Prompt</h3>
-            <textarea
-              className="w-full min-h-[100px] p-2 border border-gray-300 rounded-md"
-              value={prompt}
-              onChange={(e) => onPromptChange && onPromptChange(e.target.value)}
-              placeholder="Enter your prompt here"
-            />
-          </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -225,6 +286,43 @@ Signal LinkedIn: ${selectedSignal}`;
           </div>
 
           <div className="bg-white p-4 rounded-md border border-gray-200 shadow-sm">
+            <div className="bg-white p-4">
+              <div className="flex flex-col gap-3 mb-3 sm:flex-row sm:items-center sm:justify-between">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <Checkbox
+                    checked={includeCaseStudy}
+                    onCheckedChange={handleIncludeCaseStudyChange}
+                  />
+                  Include case study in prompt
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">Signal</Label>
+                  <Select
+                    value={selectedSignal}
+                    onValueChange={handleSignalChange}
+                  >
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="like">like</SelectItem>
+                      <SelectItem value="comment">comment</SelectItem>
+                      <SelectItem value="invitation">invitation</SelectItem>
+                      <SelectItem value="repost">repost</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Prompt</h3>
+              <textarea
+                className="w-full min-h-[100px] p-2 border border-gray-300 rounded-md"
+                value={prompt}
+                onChange={(e) =>
+                  onPromptChange && onPromptChange(e.target.value)
+                }
+                placeholder="Enter your prompt here"
+              />
+            </div>
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-semibold text-lg">Generated Message</h3>
               <Button
