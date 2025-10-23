@@ -21,6 +21,13 @@ export const MODELS = {
     inputPrice: 2, // per 1M tokens ($2.00 per 1M)
     outputPrice: 8, // per 1M tokens ($8.00 per 1M)
   },
+  "openai/gpt-4.1-mini": {
+    value: "openai/gpt-4.1-mini",
+    name: "GPT-4.1 Mini",
+    reasoningEffort: null,
+    inputPrice: 2, // per 1M tokens ($2.00 per 1M)
+    outputPrice: 8, // per 1M tokens ($8.00 per 1M)
+  },
   "openai/gpt-5": {
     value: "openai/gpt-5",
     name: "GPT-5",
